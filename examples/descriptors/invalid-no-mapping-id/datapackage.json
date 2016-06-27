@@ -1,0 +1,32 @@
+{
+    "name": "the-name",
+    "owner": "me",
+    "openspending": {
+        "mapping": {
+            "amount": "amount"
+        }
+    },
+    "resources": [
+        {
+            "title": "",
+            "mediatype": "text/csv",
+            "format": "csv",
+            "path": "data_valid.csv",
+            "description": "",
+            "name": "data_valid",
+            "schema": {
+                "fields": [
+                    {
+                        "title": "",
+                        "type": "string",
+                        "format": "default",
+                        "description": "",
+                        "name": "id"
+                    }
+                ]
+            },
+            "granularity": "aggregated",
+            "currency": "USD"
+        }
+    ]
+}

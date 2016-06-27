@@ -1,0 +1,44 @@
+{
+    "resources": [
+        {
+            "schema": {
+                "fields": [
+                    {
+                        "format": "default",
+                        "type": "string",
+                        "name": "id",
+                        "constraints": {
+                            "unique": true
+                        }
+                    },
+                    {
+                        "format": "default",
+                        "type": "string",
+                        "name": "name"
+                    },
+                    {
+                        "format": "default",
+                        "type": "string",
+                        "name": "description"
+                    },
+                    {
+                        "format": "default",
+                        "type": "number",
+                        "name": "amount"
+                    }
+                ]
+            },
+            "path": "data/data.csv",
+            "currency": "USD",
+            "name": "data_valid",
+            "granularity": "aggregated"
+        }
+    ],
+    "name": "my-new-thing",
+    "openspending": {
+        "mapping": {
+            "amount": "amount",
+            "id": "id"
+        }
+    }
+}
