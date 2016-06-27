@@ -1,0 +1,8 @@
+"""Command line tools to load data efficiently into Open-Spending"""
+
+from click import command
+
+
+@command()
+def cli():
+    print('Welcome to Gobble!')

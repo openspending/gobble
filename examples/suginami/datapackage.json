@@ -1,0 +1,181 @@
+{
+  "additional_owners": [],
+  "countryCode": [
+    "JP"
+  ],
+  "description": "2013_suginami_budget_test",
+  "mapping": {
+    "dimensions": {
+      "category": {
+        "attributes": {
+          "label": {
+            "labelfor": "name",
+            "source": "category_label"
+          },
+          "name": {
+            "source": "category_name"
+          }
+        },
+        "primaryKey": "name"
+      },
+      "subcategory": {
+        "attributes": {
+          "label": {
+            "labelfor": "name",
+            "source": "subcategory_label"
+          },
+          "name": {
+            "source": "subcategory_name"
+          }
+        },
+        "primaryKey": "name"
+      },
+      "time": {
+        "attributes": {
+          "day": {
+            "source": "time_day"
+          },
+          "label": {
+            "source": "time_name"
+          },
+          "month": {
+            "source": "time_month"
+          },
+          "year": {
+            "source": "time_year"
+          },
+          "yearmonth": {
+            "source": "time_yearmonth"
+          }
+        },
+        "dimensionType": "datetime",
+        "primaryKey": [
+          "year",
+          "month",
+          "day"
+        ]
+      }
+    },
+    "measures": {
+      "amount": {
+        "currency": "JPY",
+        "source": "amount"
+      }
+    }
+  },
+  "name": "2013_suginami_budget_test",
+  "owner": "sthsoulful",
+  "profiles": {
+    "fiscal": "*",
+    "tabular": "*"
+  },
+  "resources": [
+    {
+      "name": "dataset",
+      "path": "dataset.csv",
+      "schema": {
+        "fields": [
+          {
+            "description": "",
+            "format": "default",
+            "name": "openspending_id",
+            "title": "",
+            "type": "string"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "category_name",
+            "title": "",
+            "type": "string"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "category_label",
+            "title": "",
+            "type": "string"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "amount",
+            "title": "",
+            "type": "number"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "time_name",
+            "title": "",
+            "type": "date"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "time_year",
+            "title": "",
+            "type": "integer"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "time_month",
+            "title": "",
+            "type": "integer"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "time_day",
+            "title": "",
+            "type": "integer"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "time_week",
+            "title": "",
+            "type": "integer"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "time_yearmonth",
+            "title": "",
+            "type": "integer"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "time_quarter",
+            "title": "",
+            "type": "integer"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "time",
+            "title": "",
+            "type": "date"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "subcategory_name",
+            "title": "",
+            "type": "string"
+          },
+          {
+            "description": "",
+            "format": "default",
+            "name": "subcategory_label",
+            "title": "",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "title": "2013_suginami_budget_test"
+}

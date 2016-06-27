@@ -1,0 +1,4 @@
+id,name,description,amount
+A3001,Taxes,Taxes we collect,10000.00
+A5032,Parking Fees,Parking fees we collect,2000.00
+A5032,Parking Fines,Parking fines we collected,4000.00

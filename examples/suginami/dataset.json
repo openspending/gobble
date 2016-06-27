@@ -1,0 +1,97 @@
+{
+  "id": 1828,
+  "name": "2013_suginami_budget_test",
+  "label": "2013_suginami_budget_test",
+  "description": "2013_suginami_budget_test",
+  "currency": "JPY",
+  "default_time": null,
+  "data": {
+    "mapping": {
+      "time": {
+        "default_value": "",
+        "description": null,
+        "type": "date",
+        "format": null,
+        "dimension": "time",
+        "column": "Time",
+        "datatype": "date",
+        "label": "Time"
+      },
+      "Subcategory": {
+        "description": null,
+        "type": "compound",
+        "dimension": "Subcategory",
+        "key": true,
+        "label": "Subcategory",
+        "attributes": {
+          "name": {
+            "default_value": "",
+            "column": "Subcategory_id",
+            "datatype": "id"
+          },
+          "label": {
+            "default_value": "",
+            "column": "Subcategory",
+            "datatype": "string"
+          }
+        }
+      },
+      "amount": {
+        "default_value": "",
+        "description": null,
+        "type": "measure",
+        "dimension": "amount",
+        "column": "Amount",
+        "datatype": "float",
+        "label": "Amount"
+      },
+      "Category": {
+        "description": null,
+        "dimension": "Category",
+        "type": "compound",
+        "label": "Category",
+        "attributes": {
+          "name": {
+            "default_value": "",
+            "column": "Category_id",
+            "datatype": "id"
+          },
+          "label": {
+            "default_value": "",
+            "column": "Category",
+            "datatype": "string"
+          }
+        }
+      }
+    }
+  },
+  "private": false,
+  "entry_custom_html": null,
+  "created_at": "2013-06-26T13:38:15.567120",
+  "updated_at": "2014-02-22T04:45:03.017925",
+  "schema_version": null,
+  "ckan_uri": "",
+  "category": "budget",
+  "serp_title": null,
+  "serp_teaser": null,
+  "languages": [
+    "ja"
+  ],
+  "territories": [
+    "JP"
+  ],
+  "sources": [
+    {
+      "id": 2747,
+      "url": "http://Konigs-h.github.io/files/2013_tokyo_suginami_test.csv",
+      "analysis": "{\"mapping\": {}, \"columns\": [\"Category\", \"Category_id\", \"Subcategory\", \"Subcategory_id\", \"Amount\", \"Time\"]}",
+      "created_at": "2013-06-26T13:38:28.171504",
+      "dataset_id": 1828,
+      "creator_id": 978,
+      "updated_at": "2013-10-26T09:28:46.310656"
+    }
+  ],
+  "owner": "sthsoulful",
+  "additional_owners": [],
+  "export_query": "SELECT \"2013_suginami_budget_test__entry\".id AS \"openspending_id\", \"2013_suginami_budget_test__time\".\"name\" AS \"time_name\", \"2013_suginami_budget_test__time\".\"year\" AS \"time_year\", \"2013_suginami_budget_test__time\".\"month\" AS \"time_month\", \"2013_suginami_budget_test__time\".\"day\" AS \"time_day\", \"2013_suginami_budget_test__time\".\"week\" AS \"time_week\", \"2013_suginami_budget_test__time\".\"yearmonth\" AS \"time_yearmonth\", \"2013_suginami_budget_test__time\".\"quarter\" AS \"time_quarter\", \"2013_suginami_budget_test__time\".name AS \"time\", \"2013_suginami_budget_test__Subcategory\".\"name\" AS \"subcategory_name\", \"2013_suginami_budget_test__Subcategory\".\"label\" AS \"subcategory_label\", \"2013_suginami_budget_test__entry\".\"amount\" AS \"amount\", \"2013_suginami_budget_test__Category\".\"name\" AS \"category_name\", \"2013_suginami_budget_test__Category\".\"label\" AS \"category_label\" FROM \"2013_suginami_budget_test__entry\" LEFT JOIN \"2013_suginami_budget_test__time\" ON \"2013_suginami_budget_test__entry\".\"time_id\" = \"2013_suginami_budget_test__time\".id LEFT JOIN \"2013_suginami_budget_test__Subcategory\" ON \"2013_suginami_budget_test__entry\".\"Subcategory_id\" = \"2013_suginami_budget_test__Subcategory\".id LEFT JOIN \"2013_suginami_budget_test__Category\" ON \"2013_suginami_budget_test__entry\".\"Category_id\" = \"2013_suginami_budget_test__Category\".id"
+}
