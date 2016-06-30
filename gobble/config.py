@@ -1,8 +1,9 @@
+"""Configuration parameters for the package."""
+
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-
 # noinspection PyCompatibility
 from builtins import open
 from future import standard_library
@@ -11,6 +12,7 @@ standard_library.install_aliases()
 from json import loads
 from os.path import join
 from pprint import pprint
+
 
 SECRETS_DIR = '/secrets'
 GOOGLE_FILEPATH = join(SECRETS_DIR, 'google.json')

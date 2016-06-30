@@ -1,10 +1,11 @@
 """ A utility class to help make API calls. """
 
-# Pasteurize python3 code
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+# noinspection PyCompatibility
+from builtins import str
 from future import standard_library
 standard_library.install_aliases()
 
