@@ -25,3 +25,8 @@ TEST_CASES = [SIMPLE, LONG, LOCAL]
 @mark.parametrize('host, parameters, urls', TEST_CASES)
 def test_url(host, parameters, urls):
     assert APIRequest(host, **parameters).url in urls
+
+
+def test_call():
+    request = APIRequest('google.com')
+    assert request().status_code == 200
