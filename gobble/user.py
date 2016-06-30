@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+
 from future import standard_library
 standard_library.install_aliases()
 
@@ -24,6 +25,4 @@ if __name__ == '__main__':
         approval_prompt='force',
     )
 
-    print ('Please go to %s and authorize access.' % authorization_url)
-    authorization_response = input('Enter the full callback URL')
-
+    print('Please go to %s and authorize access.' % authorization_url)
