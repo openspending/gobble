@@ -4,11 +4,12 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-# noinspection PyCompatibility
-from builtins import str
 from future import standard_library
 standard_library.install_aliases()
+# noinspection PyCompatibility
+from builtins import str
 
+from gobble.config import HOST
 from requests import Session
 
 
@@ -68,3 +69,6 @@ class APIRequest(object):
 
     def __call__(self):
         return getattr(self.session, self.verb)(self.url)
+
+
+request_check_oauth = APIRequest(HOST, port=5000, path=['oauth', 'check'])
