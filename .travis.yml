@@ -15,7 +15,7 @@ install:
 
 script:
   - pylama --ignore=E402 gobble
-  - PACKAGE=gobble tox
+  - py.test --verbose --cov=gobble tests
 
 after_success:
   - python coveralls
