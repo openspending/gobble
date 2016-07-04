@@ -10,10 +10,6 @@ python:
   - 3.4
   - 3.5
 
-env:
-  global:
-    - TOXENV="py${PYTHON_VERSION//./}"
-
 install:
   - pip install --upgrade -r requirements.dev.txt
 
