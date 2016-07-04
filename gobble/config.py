@@ -18,6 +18,7 @@ SECRETS_DIR = '/secrets'
 GOOGLE_FILEPATH = join(SECRETS_DIR, 'google.json')
 GOOGLE_OAUTH = loads(open(GOOGLE_FILEPATH).read())['installed']
 GOOGLE_API_URL = 'https://accounts.google.com/o/oauth2/auth'
+REDIRECT_URL = 'http://127.0.0.1:5000/oauth/check'
 SCOPE = ['https://www.googleapis.com/auth/userinfo.email',
          'https://www.googleapis.com/auth/userinfo.profile']
 
