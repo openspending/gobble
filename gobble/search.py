@@ -37,12 +37,11 @@ class ElasticSearch(object):
 
     def validate_query(self, **query):
         for key in query.keys():
-            if key in self.searchable_keys:
-                return self.sanitize(query)
-            else:
+            if key not in self.searchable_keys:
                 template = 'Cannot search {kind} by {key}'
                 feedback = template.format(kind=self.kind, key=key)
                 raise BadSearchKey(feedback)
+        return self.sanitize(query)
 
     @staticmethod
     def sanitize(query):
