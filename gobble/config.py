@@ -21,6 +21,7 @@ SCOPE = ['https://www.googleapis.com/auth/userinfo.email',
 
 
 USER_CONFIG_DIR = join(expanduser('~'), '.gobble')
+TOKEN_FILEPATH = join(USER_CONFIG_DIR, 'token')
 
 HOST = 'next.openspending.org'
 PORT = None
