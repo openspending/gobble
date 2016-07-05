@@ -8,15 +8,15 @@ from future import standard_library
 standard_library.install_aliases()
 
 from pytest import raises
-from gobble.search import Contributors, BadSearchKey
+from gobble.search import Contributors, BadSearchKey, Packages
 
 
 def test_validate_bad_query_raises_exception():
     with raises(BadSearchKey):
-        Contributors().validate_query(foo='bar')
+        Contributors().validate_query(foo='bar', name='mickey mouse')
 
 
 def test_validate_good_query_adds_double_quotes():
-    original = {'name': 'mickey mouse'}
-    validated = {'name': '"mickey mouse"'}
-    assert Contributors().validate_query(**original) == validated
+    original = {'author': 'mickey mouse', 'title': 'fantasia'}
+    validated = {'author': '"mickey mouse"', 'title': '"fantasia"'}
+    assert Packages().validate_query(**original) == validated
