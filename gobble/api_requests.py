@@ -10,6 +10,9 @@ standard_library.install_aliases()
 from builtins import str
 
 from requests import Session
+from gobble.config import HOST
+
+# TO DO: Get rid of the APIRequest class, keep the APISession class?
 
 
 def optional(method):
@@ -39,7 +42,7 @@ class APIRequest(object):
         self._schema = schema
         self._port = port
         self._path = path
-        self._query = query
+        self._query = query or {}
 
     @property
     def schema(self):
@@ -66,5 +69,30 @@ class APIRequest(object):
         if self._path:
             return '/' + '/'.join(self._path)
 
-    def __call__(self):
+    def __call__(self, **parameters):
+        if parameters:
+            self._query.update(parameters)
         return getattr(self.session, self.verb)(self.url)
+
+
+class APISession(object):
+    session = Session()
+
+    check_user = APIRequest(
+        HOST,
+        session=session,
+        path=['oauth', 'check'],
+        schema='http'
+    )
+    check_permission = APIRequest(
+        HOST,
+        session=session,
+        path=['permit', 'check'],
+        schema='http'
+    )
+    oauth_callback = APIRequest(
+        HOST,
+        session=session,
+        path=['oauth', 'callback'],
+        schema='http'
+    )
