@@ -96,3 +96,16 @@ class APISession(object):
         path=['oauth', 'callback'],
         schema='http'
     )
+    search_users = APIRequest(
+        HOST,
+        session=session,
+        path=['search', 'user'],
+        schema='http'
+    )
+
+    search_packages = APIRequest(
+        HOST,
+        session=session,
+        path=['search', 'package'],
+        schema='http'
+    )
