@@ -61,6 +61,21 @@ class User(object):
 
         self.log.debug(user)
 
+    def has_permission(self, service):
+        response = self.session.check_permission(
+            jwt=self.token,
+            service=service
+        )
+        print(response.json())
+
+    def can_upload(self):
+        response = self.session.check_permission(
+            jwt=self.token,
+            service='os.datastore'
+        ).json()
+        permissions = response['permissions']
+        return permissions['datapackage-upload']
+
 
 def check_authentication():
     # This is for sandboxing purposes
@@ -79,3 +94,5 @@ def check_authentication():
 
 if __name__ == '__main__':
     u = User()
+    u.has_permission('os.datastore')
+    print(u.can_upload())
