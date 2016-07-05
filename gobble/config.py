@@ -4,6 +4,9 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+
+from os.path import expanduser, join
+
 from future import standard_library
 standard_library.install_aliases()
 
@@ -13,13 +16,14 @@ from pprint import pprint
 GOOGLE_OAUTH_CLIENT_ID = getenv('GOOGLE_OAUTH_CLIENT_ID')
 GOOGLE_OAUTH_CLIENT_SECRET = getenv('GOOGLE_OAUTH_CLIENT_ID')
 GOOGLE_API_URL = 'https://accounts.google.com/o/oauth2/auth'
-REDIRECT_URL = 'http://127.0.0.1:5000/oauth/check'
 SCOPE = ['https://www.googleapis.com/auth/userinfo.email',
          'https://www.googleapis.com/auth/userinfo.profile']
 
 
-HOST = '0.0.0.0'
-PORT = '5000'
+USER_CONFIG_DIR = join(expanduser('~'), '.gobble')
+
+HOST = 'next.openspending.org'
+PORT = None
 
 
 if __name__ == '__main__':
