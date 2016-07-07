@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import absolute_import
 from future import standard_library
+from requests import get
+
 standard_library.install_aliases()
 
 from logging import getLogger
@@ -13,65 +15,52 @@ from datapackage import DataPackage
 from fnmatch import filter
 from os import walk
 
-from gobble.config import (
-    FISCAL_SCHEMA,
-    DATAPACKAGE_SCHEMA,
-    TABULAR_SCHEMA,
-    SCHEMA_DETECTION_THRESHOLD as THRESHOLD
-)
+from gobble.config import SCHEMA_DETECTION_THRESHOLD as THRESHOLD, SCHEMAS_HOST
 
 log = getLogger(__name__)
 
 
 class Collection(object):
-    extensions = []
+    """A collection of data-packages
 
-    def __init__(self, folder, detection=THRESHOLD):
+    Recursively collect all data-packages inside a folder. Perform a
+    loose match so that json files get detected even though they may
+    not be completely valid.
+    """
+
+    def __init__(self, folder, flavour='default', detection=THRESHOLD):
         self.root = folder
         self.detection = detection
-        self.packages = list(self.collect_all())
+        self.flavour = flavour
+        self.schema = self.get_schema(flavour)
+        self.packages = list(self.all)
 
-    def get_filepaths(self):
+    @property
+    def filepaths(self):
         for root, folders, files in walk(self.root):
-            for extension in self.extensions:
-                for file in filter(files, '*.' + extension):
-                    yield join(root, file)
+            for file in filter(files, '*.json'):
+                yield join(root, file)
 
-    def collect_all(self):
-        for filepath in self.get_filepaths():
-            item = self.collect(filepath)
-            if self.loose_match(item):
-                yield item
+    @property
+    def all(self):
+        for filepath in self.filepaths:
+            package = self.ingest(filepath)
+            if self.is_match(package):
+                yield package
 
-    def loose_match(self, filepath):
-        pass
-
-    def collect(self, filepath):
-        pass
-
-    def __repr__(self):
-        info = {
-            'class': self.__class__.__name__,
-            'folder': self.root,
-            'nb': len(self.packages)}
-        return '<{class}: {nb} files in {folder}>'.format(**info)
+    @staticmethod
+    def get_schema(schema):
+        prefix = '%s-' % schema if schema != 'default' else ''
+        response = get(SCHEMAS_HOST + prefix + 'data-package.json')
+        return response.json()
 
     def validate(self):
         pass
 
+    def ingest(self, filepath):
+        return DataPackage(metadata=filepath, schema=self.schema)
 
-class PackageCollection(Collection):
-    extensions = ['json']
-
-    def collect(self, filepath):
-        return DataPackage(metadata=filepath,
-                           schema=DATAPACKAGE_SCHEMA)
-
-    def loose_match(self, item):
-        # Perform a loose match so that the
-        # correct descriptor files get detected even
-        # though they may not be completely valid.
-
+    def is_match(self, item):
         found_keys = set(item.to_dict().keys())
         required_keys = set(item.required_attributes)
         common_keys = found_keys & required_keys
@@ -80,20 +69,18 @@ class PackageCollection(Collection):
         if key_ratio >= self.detection:
             return True
         else:
-            template = '%s required %s but found %s (min=%1.1f), skipping %s'
-            parameters = (self.__class__.__name__,
+            template = '%s data-package requires %s, ' \
+                       'found %s (min=%1.1f), skipping %s'
+            parameters = (self.flavour.upper(),
                           required_keys,
                           found_keys,
                           self.detection,
                           item.base_path)
             log.warn(template, *parameters)
 
-
-class TabularCollection(PackageCollection):
-    def collect(self, filepath):
-        return DataPackage(metadata=filepath, schema=TABULAR_SCHEMA)
-
-
-class FiscalCollection(PackageCollection):
-    def collect(self, filepath):
-        return DataPackage(metadata=filepath, schema=FISCAL_SCHEMA)
+    def __repr__(self):
+        info = {
+            'class': self.__class__.__name__,
+            'folder': self.root,
+            'nb': len(self.packages)}
+        return '<{class}: {nb} files in {folder}>'.format(**info)
