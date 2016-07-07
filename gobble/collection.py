@@ -56,10 +56,12 @@ class Collection(object):
             'nb': len(self.packages)}
         return '<{class}: {nb} files in {folder}>'.format(**info)
 
+    def validate(self):
+        pass
+
 
 class PackageCollection(Collection):
     extensions = ['json']
-    required_keys = DATAPACKAGE_SCHEMA['required']
 
     def collect(self, filepath):
         return DataPackage(metadata=filepath,
@@ -71,7 +73,7 @@ class PackageCollection(Collection):
         # though they may not be completely valid.
 
         found_keys = set(item.to_dict().keys())
-        required_keys = set(self.required_keys)
+        required_keys = set(item.required_attributes)
         common_keys = found_keys & required_keys
         key_ratio = len(common_keys) / len(required_keys)
 
@@ -88,16 +90,10 @@ class PackageCollection(Collection):
 
 
 class TabularCollection(PackageCollection):
-    required_keys = TABULAR_SCHEMA['required']
-
     def collect(self, filepath):
-        return DataPackage(metadata=filepath,
-                           schema=TABULAR_SCHEMA)
+        return DataPackage(metadata=filepath, schema=TABULAR_SCHEMA)
 
 
 class FiscalCollection(PackageCollection):
-    required_keys = FISCAL_SCHEMA['required']
-
     def collect(self, filepath):
-        return DataPackage(metadata=filepath,
-                           schema=FISCAL_SCHEMA)
+        return DataPackage(metadata=filepath, schema=FISCAL_SCHEMA)
