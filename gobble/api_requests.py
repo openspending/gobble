@@ -10,7 +10,7 @@ standard_library.install_aliases()
 from builtins import str
 
 from requests import Session
-from gobble.config import HOST
+from gobble.config import OS_HOST
 
 # TO DO: Get rid of the APIRequest class, keep the APISession class?
 
@@ -79,32 +79,32 @@ class APISession(object):
     session = Session()
 
     check_user = APIRequest(
-        HOST,
+        OS_HOST,
         session=session,
         path=['oauth', 'check'],
         schema='http'
     )
     check_permission = APIRequest(
-        HOST,
+        OS_HOST,
         session=session,
         path=['permit', 'check'],
         schema='http'
     )
     oauth_callback = APIRequest(
-        HOST,
+        OS_HOST,
         session=session,
         path=['oauth', 'callback'],
         schema='http'
     )
     search_users = APIRequest(
-        HOST,
+        OS_HOST,
         session=session,
         path=['search', 'user'],
         schema='http'
     )
 
     search_packages = APIRequest(
-        HOST,
+        OS_HOST,
         session=session,
         path=['search', 'package'],
         schema='http'
