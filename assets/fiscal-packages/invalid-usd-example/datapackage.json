@@ -34,7 +34,7 @@
             "granularity": "aggregated"
         }
     ],
-    "name": "my-new-thing",
+    "name": "invalid-only-has-name-and-openspending",
     "openspending": {
         "mapping": {
             "amount": "amount",

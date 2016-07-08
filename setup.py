@@ -40,7 +40,7 @@ setup(
     url=package['repository'],
     license=package['license'],
     include_package_data=True,
-    packages=find_packages(exclude=['examples', 'tests']),
+    packages=find_packages(exclude=['fiscal-packages', 'tests']),
     package_dir={package['slug']: package['slug']},
     install_requires=requirements,
     tests_require=requirements_dev + requirements,
