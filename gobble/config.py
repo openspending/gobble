@@ -37,7 +37,7 @@ SCHEMAS_HOST = 'http://schemas.datapackages.org/'
 FISCAL_SCHEMA = get(SCHEMAS_HOST + 'fiscal-data-package.json').json()
 DATAPACKAGE_SCHEMA = get(SCHEMAS_HOST + 'data-package.json').json()
 TABULAR_SCHEMA = get(SCHEMAS_HOST + 'tabular-data-package.json').json()
-SCHEMA_DETECTION_THRESHOLD = 0.5
+SCHEMA_DETECTION_THRESHOLD = 1
 
 VALIDATION_FEEDBACK = {'message'}
 
