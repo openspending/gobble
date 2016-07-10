@@ -10,7 +10,7 @@ standard_library.install_aliases()
 from builtins import dict
 
 from pytest import mark
-from gobble.api_requests import APIRequest
+from gobble.session import APIRequest
 
 
 SIMPLE = ('foo.bar', dict(), ['https://foo.bar'])

@@ -5,6 +5,9 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from future import standard_library
+
+from gobble.elasticsearch import ElasticSearch
+
 standard_library.install_aliases()
 
 from logging import getLogger, basicConfig, DEBUG
@@ -12,10 +15,10 @@ from os import mkdir
 from os.path import isdir, isfile
 from requests_oauthlib import OAuth2Session
 
-from gobble.api_requests import APISession
+from gobble.session import APISession
 from gobble.config import (GOOGLE_OAUTH_CLIENT_ID,
                            SCOPE, GOOGLE_API_URL,
-                           TOKEN_FILEPATH, USER_CONFIG_DIR)
+                           TOKEN_FILEPATH, USER_CONFIG_DIR, USER_EMAIL)
 
 # TO DO: Find way to get and refresh the token
 # TO DO: Write tests
@@ -29,11 +32,16 @@ class TokenRequired(Exception):
 
 
 class User(object):
-    def __init__(self):
+    services = [
+        'os-datastore'
+    ]
+
+    def __init__(self, email=USER_EMAIL):
         self.session = APISession
         self.token = self._get_user_token()
         self.profile = None
         self.log = getLogger('user')
+        self.email = email
 
         self._soft_install()
         self._authenticate()
@@ -61,12 +69,14 @@ class User(object):
 
         self.log.debug(user)
 
-    def has_permission(self, service):
-        response = self.session.check_permission(
-            jwt=self.token,
-            service=service
-        )
-        print(response.json())
+    @property
+    def permissions(self):
+        for service in self.services:
+            response = self.session.check_permission(
+                jwt=self.token,
+                service=service
+            )
+            yield response.json()
 
     def can_upload(self):
         response = self.session.check_permission(
@@ -75,6 +85,13 @@ class User(object):
         ).json()
         permissions = response['permissions']
         return permissions['datapackage-upload']
+
+    def info(self):
+        return {
+            'token': self.token,
+            'user': ElasticSearch().search('user', email=self.email),
+            'permissions': list(self.permissions)
+        }
 
 
 def check_authentication():
