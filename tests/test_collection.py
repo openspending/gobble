@@ -16,35 +16,36 @@ from gobble.config import EXAMPLES_DIR
 
 collect_examples = [
     ('fiscal', 0.5, 8),
-    ('default', 0.5, 9),
+    ('base', 0.5, 8),
     ('tabular', 1, 8),
-    ('fiscal', 1, 0),
-    ('default', 1, 9),
+    ('fiscal', 1, 2),
+    ('base', 1, 8),
     ('tabular', 1, 8)
 ]
 
-flavours = [
-    'default',
+schemas = [
+    'base',
     'tabular',
     'fiscal'
 ]
 
 
 # noinspection PyShadowingNames
-@mark.parametrize('flavour, threshold, hits', collect_examples)
-def test_collect_packages_in_examples(flavour, threshold, hits):
-    collection = Collection(EXAMPLES_DIR, flavour=flavour, detection=threshold)
+@mark.parametrize('schema, threshold, hits', collect_examples)
+def test_collect_packages_in_examples(schema, threshold, hits):
+    collection = Collection(EXAMPLES_DIR, schema=schema, detection=threshold)
     assert len(collection.packages) == hits
 
 
 # noinspection PyShadowingNames
-@mark.parametrize('flavour', flavours)
-def test_datapackage_object_ingestion(flavour):
-    collection = Collection(EXAMPLES_DIR, flavour=flavour)
+@mark.parametrize('schema', schemas)
+def test_datapackage_object_ingestion(schema):
+    collection = Collection(EXAMPLES_DIR, schema=schema)
     assert all(map(lambda x: isinstance(x, DataPackage), collection.packages))
 
 
 def test_collection_representation():
-    packages = Collection(EXAMPLES_DIR)
-    representation = '<Collection: 9 files in %s>' % EXAMPLES_DIR
-    assert repr(packages) == representation
+    collection = Collection(EXAMPLES_DIR)
+    template = '<Collection: %s files in %s>'
+    representation = template % (len(collection.packages), EXAMPLES_DIR)
+    assert repr(collection) == representation
