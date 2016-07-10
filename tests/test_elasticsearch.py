@@ -8,7 +8,7 @@ from future import standard_library
 standard_library.install_aliases()
 
 from pytest import raises
-from gobble.search import Contributors, BadSearchKey, Packages
+from gobble.elasticsearch import Contributors, BadSearchKey, Packages
 
 
 def test_validate_bad_query_raises_exception():
