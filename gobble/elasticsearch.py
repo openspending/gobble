@@ -8,7 +8,7 @@ from future import standard_library
 standard_library.install_aliases()
 
 from pprint import pprint
-from gobble.api_requests import APISession
+from gobble.session import APISession
 
 # TO DO: Searching a package by key value returns the whole list
 # TO DO: merge the 3 search classes into one

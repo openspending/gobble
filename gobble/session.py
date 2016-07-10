@@ -12,7 +12,7 @@ from builtins import str
 from requests import Session
 from gobble.config import OS_HOST
 
-# TO DO: Get rid of the APIRequest class, keep the APISession class?
+# TO DO: Simplify the request module
 
 
 def optional(method):
