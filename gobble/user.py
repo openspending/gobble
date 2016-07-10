@@ -6,7 +6,6 @@ from __future__ import division
 from __future__ import absolute_import
 from future import standard_library
 
-from gobble import config
 from gobble.elasticsearch import ElasticSearch
 
 standard_library.install_aliases()
