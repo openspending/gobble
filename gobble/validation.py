@@ -11,6 +11,7 @@ from future import standard_library
 from collections import OrderedDict
 from datapackage import DataPackage
 from jsonschema.exceptions import ValidationError
+from pip.utils import cached_property
 
 from gobble.config import VALIDATION_FEEDBACK
 
@@ -29,25 +30,30 @@ class Validator(object):
                      'validator', 'validator_value', 'path',
                      'schema_path', 'instance', 'schema', 'parent'
     """
-    valid_feedback = {
+    VALID_OPTIONS = {
         'message', 'cause', 'context',
         'validator', 'validator_value',
         'path', 'schema_path', 'instance',
         'schema', 'parent'
     }
 
+    NOT_A_PACKAGE = 'Argument must be DataPackage object'
+    INVALID_OPTION = 'Feedback must be %s' % str(VALID_OPTIONS)
+
     def __init__(self, package, *feedback):
-        bad_package = 'Package must be DataPackage class'
-        bad_feedback = 'Feedback must be %s' % str(self.valid_feedback)
-        assert isinstance(package, DataPackage), bad_package
-        assert set(feedback).issubset(self.valid_feedback), bad_feedback
+        assert isinstance(package, DataPackage), self.NOT_A_PACKAGE
+        assert set(feedback).issubset(self.VALID_OPTIONS), self.INVALID_OPTION
 
         self._feedback = feedback or VALIDATION_FEEDBACK
         self._package = package
         self._report = OrderedDict()
         self.timestamp = str(datetime.now())
 
-        self._run()
+        self._validate()
+
+    @cached_property
+    def errors(self):
+        return list(self._errors)
 
     @property
     def report(self):
@@ -55,7 +61,7 @@ class Validator(object):
 
     @property
     def name(self):
-        return self._package.metadata['name']
+        return self._package.metadata.get('name')
 
     @property
     def is_valid(self):
@@ -74,7 +80,7 @@ class Validator(object):
     @property
     def _package_info(self):
         for attribute in self._package.required_attributes:
-            value = getattr(self._package.metadata, attribute, None)
+            value = self._package.metadata.get(attribute)
             yield attribute, value
 
     @property
@@ -83,14 +89,15 @@ class Validator(object):
             for choice in self._feedback:
                 yield getattr(error, choice)
 
-    def _run(self):
+    def _validate(self):
         self._report.update(dict(is_valid=False, timestamp=self.timestamp))
         self._report.update(dict(package_info=dict(self._package_info)))
         try:
             self._package.validate()
             self._report.update(dict(is_valid=True))
         except ValidationError:
-            self._report.update(dict(errors=list(self._errors)))
+            self._report.update(dict(errors=self.errors))
 
     def __repr__(self):
-        return '<Validator %s: %s>' % (self.result.upper(), self.name)
+        parameters = (self.name, self.result.upper(), len(self.errors))
+        return '<Validator for %s: %s, %s errors>' % parameters
