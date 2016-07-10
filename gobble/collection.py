@@ -24,8 +24,8 @@ class Collection(object):
     """A collection of data-packages
 
     Recursively collect all data-packages inside a folder. Perform a
-    loose match so that json files get detected even though they may
-    not be completely valid.
+    loose match so that descriptor files get detected even though
+    they may not be completely valid.
     """
 
     def __init__(self, folder, flavour='default', detection=THRESHOLD):
@@ -33,6 +33,7 @@ class Collection(object):
         self.detection = detection
         self.flavour = flavour
         self.schema = self.get_schema(flavour)
+
         self.packages = list(self.all)
 
     @property

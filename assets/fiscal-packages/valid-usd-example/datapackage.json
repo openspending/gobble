@@ -6,7 +6,10 @@
                     {
                         "format": "default",
                         "type": "string",
-                        "name": "id"
+                        "name": "id",
+                        "constraints": {
+                            "unique": true
+                        }
                     },
                     {
                         "format": "default",
@@ -31,19 +34,13 @@
             "granularity": "aggregated"
         }
     ],
-    "name": "my-new-thing",
+    "name": "invalid-usd-example",
     "owner": "user1",
     "title": "title",
-    "mapping": {
+    "model": {
         "measures": {
         },
         "dimensions": {
-        }
-    },
-    "openspending": {
-        "mapping": {
-            "amount": "amount",
-            "id": "id"
         }
     }
 }

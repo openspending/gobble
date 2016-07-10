@@ -3,8 +3,8 @@
   "countryCode": [
     "JP"
   ],
-  "description": "2013_suginami_budget_test",
-  "mapping": {
+  "description": "invalid-suginami",
+  "model": {
     "dimensions": {
       "category": {
         "attributes": {
@@ -63,7 +63,7 @@
       }
     }
   },
-  "name": "2013_suginami_budget_test",
+  "name": "invalid-suginami-budget",
   "owner": "sthsoulful",
   "profiles": {
     "fiscal": "*",

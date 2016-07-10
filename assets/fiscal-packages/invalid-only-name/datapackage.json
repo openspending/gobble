@@ -34,11 +34,5 @@
             "granularity": "aggregated"
         }
     ],
-    "name": "my-new-thing",
-    "openspending": {
-        "mapping": {
-            "amount": "amount",
-            "id": "id"
-        }
-    }
+    "name": "invalid-only-name"
 }

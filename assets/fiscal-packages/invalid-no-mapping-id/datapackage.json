@@ -1,9 +1,9 @@
 {
-    "name": "the-name",
+    "name": "invalid-no-mapping-id",
     "owner": "me",
     "openspending": {
         "mapping": {
-            "id": "id"
+            "amount": "amount"
         }
     },
     "resources": [
