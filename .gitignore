@@ -1,6 +1,9 @@
 # PyCharm
 .idea/
 
+# Git
+*.patch
+
 # Pasteurize backup files
 *.bak
 
