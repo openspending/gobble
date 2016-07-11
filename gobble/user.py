@@ -113,4 +113,3 @@ if __name__ == '__main__':
     new_name = str(user_)[::-1]
     user_.update(username=new_name)
     print(user_.profile)
-
