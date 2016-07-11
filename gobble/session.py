@@ -37,7 +37,7 @@ class APIRequest(object):
 
         self.host = host
         self.session = session
-        self.verb = verb
+        self.verb = verb.lower()
 
         self._schema = schema
         self._port = port
@@ -78,16 +78,16 @@ class APIRequest(object):
 class APISession(object):
     session = Session()
 
-    check_user = APIRequest(
+    authenticate = APIRequest(
         OS_HOST,
         session=session,
-        path=['oauth', 'check'],
+        path=['user', 'check'],
         schema='http'
     )
-    check_permission = APIRequest(
+    authorize = APIRequest(
         OS_HOST,
         session=session,
-        path=['permit', 'check'],
+        path=['user', 'authorize'],
         schema='http'
     )
     oauth_callback = APIRequest(
@@ -102,10 +102,21 @@ class APISession(object):
         path=['search', 'user'],
         schema='http'
     )
-
     search_packages = APIRequest(
         OS_HOST,
         session=session,
         path=['search', 'package'],
         schema='http'
     )
+    update_user = APIRequest(
+        OS_HOST,
+        session=session,
+        path=['user', 'update'],
+        schema='http',
+        verb='POST'
+    )
+
+    def __str__(self):
+        return 'hello'
+
+    __repr__ = __str__

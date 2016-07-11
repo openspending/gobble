@@ -25,7 +25,8 @@ SCOPE = ['https://www.googleapis.com/auth/userinfo.email',
 
 
 USER_CONFIG_DIR = join(expanduser('~'), '.gobble')
-TOKEN_FILEPATH = join(USER_CONFIG_DIR, 'token')
+USER_TOKEN_FILEPATH = join(USER_CONFIG_DIR, 'token.txt')
+USER_PROFILE_FILEPATH = join(USER_CONFIG_DIR, 'profile.json')
 
 ASSETS_DIR = abspath(join(dirname(__file__), '..', 'assets'))
 EXAMPLES_DIR = abspath(join(ASSETS_DIR, 'fiscal-packages'))
@@ -41,7 +42,7 @@ SCHEMA_DETECTION_THRESHOLD = 1
 
 VALIDATION_FEEDBACK = {'message'}
 
-# settings = Settings(__name__)
+OPENSPENDING_SERVICES = ['os-datastore']
 
 
 if __name__ == '__main__':
