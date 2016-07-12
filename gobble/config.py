@@ -45,7 +45,7 @@ SCHEMA_DETECTION_THRESHOLD = 1
 VALIDATION_FEEDBACK = {'message'}
 
 OPENSPENDING_SERVICES = ['os-datastore']
-
+HASHING_BLOCK_SIZE = 65536
 
 if __name__ == '__main__':
     pprint({k: v for k, v in locals().items() if k == k.upper()})
