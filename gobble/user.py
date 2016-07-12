@@ -8,7 +8,6 @@ from future import standard_library
 
 standard_library.install_aliases()
 
-from pip.utils import cached_property
 from future.backports.http.server import HTTPServer, SimpleHTTPRequestHandler
 from pip.utils import cached_property
 from logging import getLogger, basicConfig, DEBUG
