@@ -5,23 +5,25 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from future import standard_library
-from pip.utils import cached_property
 
 standard_library.install_aliases()
 
+from pip.utils import cached_property
 from future.backports.http.server import HTTPServer, SimpleHTTPRequestHandler
 from logging import getLogger, basicConfig, DEBUG
 from collections import defaultdict
 from os.path import isdir, isfile
 from json import dumps
 from os import mkdir
+from threading import Thread
 
 
 from gobble.session import APISession
 from gobble.config import (USER_TOKEN_FILEPATH,
                            USER_CONFIG_DIR,
                            USER_PROFILE_FILEPATH,
-                           OPENSPENDING_SERVICES, OAUTH_CALLBACK_URL)
+                           OPENSPENDING_SERVICES, OAUTH_NEXT_URL,
+                           OAUTH_NEXT_PORT, OAUTH_NEXT_HOST)
 
 
 basicConfig(format='[%(module)s] %(message)s', level=DEBUG)
@@ -33,12 +35,16 @@ class OpenSpendingException(Exception):
 
 class _LocalServer(SimpleHTTPRequestHandler):
     def do_GET(self):
-        print(self.request)
-        # TODO: grab the token, cache it and shutdown
+        token = self.path[6:]
+        # with open(USER_TOKEN_FILEPATH) as text:
+        #     text.write(token)
+        # getLogger('Open-Spending').debug('Your new token is %s', token)
+        # raise SystemExit
 
 
-def _listen_for_callback():
-    httpd = HTTPServer(('127.0.0.1', 8000), _LocalServer)
+def _listen_for_token():
+    url = (OAUTH_NEXT_HOST, OAUTH_NEXT_PORT)
+    httpd = HTTPServer(url, _LocalServer)
     httpd.serve_forever()
 
 
@@ -99,15 +105,14 @@ class User(object):
             self._get_new_token()
 
     def _get_new_token(self):
-        query = dict(callback_url=OAUTH_CALLBACK_URL)
+        query = {'next': OAUTH_NEXT_URL}
         response = self._conductor.authenticate(**query)
         self._log.debug('Response: %s', response.json())
-
-        _listen_for_callback()
-
-        self._log.debug('Response: %s', response.json())
-        callback_url = response.json()['providers']['google']['url']
-        print('Please click on this link: %s' % callback_url)
+        sign_in_url = response.json()['providers']['google']['url']
+        server_loop = Thread(target=_listen_for_token).run()
+        self._log.info('Please click on ' + sign_in_url)
+        server_loop.join()
+        self._authenticate()
 
     def _register_permissions(self, response, service):
         permissions = response.json()['permissions']
@@ -127,7 +132,7 @@ class User(object):
 
     def __repr__(self):
         status = 'is' if self.is_authenticated else 'is not'
-        template = '<User: {name} is {status} authenticated>'
+        template = '<User: {name} {status} authenticated>'
         return template.format(name=self, status=status)
 
 
