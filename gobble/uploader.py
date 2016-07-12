@@ -69,12 +69,13 @@ class Uploader(object):
                 }
             }
 
+
 if __name__ == '__main__':
     descriptor = join(ASSETS_DIR, 'mexican-budget-samples', 'datapackage.json')
     payload = join(ASSETS_DIR, 'mexican-budget-samples', 'payload.json')
 
-    user = User()
-    package = DataPackage(descriptor)
-    uploader = Uploader(user, package)
+    user_ = User()
+    package_ = DataPackage(descriptor)
+    uploader = Uploader(user_, package_)
 
     open(payload, 'w+').write(dumps(uploader.payload, indent=2))
