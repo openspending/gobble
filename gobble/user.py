@@ -10,6 +10,7 @@ standard_library.install_aliases()
 
 from pip.utils import cached_property
 from future.backports.http.server import HTTPServer, SimpleHTTPRequestHandler
+from pip.utils import cached_property
 from logging import getLogger, basicConfig, DEBUG
 from collections import defaultdict
 from os.path import isdir, isfile
@@ -22,8 +23,9 @@ from gobble.session import APISession
 from gobble.config import (USER_TOKEN_FILEPATH,
                            USER_CONFIG_DIR,
                            USER_PROFILE_FILEPATH,
-                           OPENSPENDING_SERVICES, OAUTH_NEXT_URL,
-                           OAUTH_NEXT_PORT, OAUTH_NEXT_HOST)
+                           OPENSPENDING_SERVICES,
+                           OAUTH_NEXT_URL,
+                           OAUTH_NEXT_SERVER)
 
 
 basicConfig(format='[%(module)s] %(message)s', level=DEBUG)
@@ -36,15 +38,13 @@ class OpenSpendingException(Exception):
 class _LocalServer(SimpleHTTPRequestHandler):
     def do_GET(self):
         token = self.path[6:]
-        # with open(USER_TOKEN_FILEPATH) as text:
-        #     text.write(token)
-        # getLogger('Open-Spending').debug('Your new token is %s', token)
-        # raise SystemExit
+        with open(USER_TOKEN_FILEPATH) as text:
+            text.write(token)
+        raise SystemExit
 
 
 def _listen_for_token():
-    url = (OAUTH_NEXT_HOST, OAUTH_NEXT_PORT)
-    httpd = HTTPServer(url, _LocalServer)
+    httpd = HTTPServer(OAUTH_NEXT_SERVER, _LocalServer)
     httpd.serve_forever()
 
 
@@ -57,7 +57,7 @@ class User(object):
         self.permissions = {}
 
         if not self.token:
-            self._get_new_token()
+            self._request_new_token()
         else:
             self._authenticate()
 
@@ -99,19 +99,19 @@ class User(object):
             self.profile = user['profile']
             self.is_authenticated = user['authenticated']
             self._cache_profile()
-            self._log.info("Welcome to Open-Spending %s", self)
+            self._log.info("Welcome to Open-Spending %s!", self)
         else:
             self._log.warn('Token has expired: %s', self.token)
-            self._get_new_token()
+            self._request_new_token()
 
-    def _get_new_token(self):
+    def _request_new_token(self):
         query = {'next': OAUTH_NEXT_URL}
         response = self._conductor.authenticate(**query)
         self._log.debug('Response: %s', response.json())
         sign_in_url = response.json()['providers']['google']['url']
-        server_loop = Thread(target=_listen_for_token).run()
-        self._log.info('Please click on ' + sign_in_url)
-        server_loop.join()
+        self._log.info('Please click on %s' % sign_in_url)
+        local_server = Thread(target=_listen_for_token).run()
+        local_server.join()
         self._authenticate()
 
     def _register_permissions(self, response, service):
