@@ -17,6 +17,8 @@ from requests import get
 
 USER_EMAIL = 'mickey.mouse@disney.com'
 
+OAUTH_NEXT_SERVER = ('127.0.0.1', 8000)
+OAUTH_NEXT_URL = 'http://%s:%s' % OAUTH_NEXT_SERVER
 GOOGLE_OAUTH_CLIENT_ID = getenv('GOOGLE_OAUTH_CLIENT_ID')
 GOOGLE_OAUTH_CLIENT_SECRET = getenv('GOOGLE_OAUTH_CLIENT_ID')
 GOOGLE_API_URL = 'https://accounts.google.com/o/oauth2/auth'
