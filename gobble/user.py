@@ -12,7 +12,7 @@ from future.backports.http.server import HTTPServer, SimpleHTTPRequestHandler
 from pip.utils import cached_property
 from logging import getLogger, basicConfig, DEBUG
 from collections import defaultdict
-from os.path import isdir, isfile
+from os.path import isdir, isfile, join
 from json import dumps
 from os import mkdir
 from threading import Thread
@@ -21,7 +21,6 @@ from threading import Thread
 from gobble.session import APISession
 from gobble.config import (USER_TOKEN_FILEPATH,
                            USER_CONFIG_DIR,
-                           USER_PROFILE_FILEPATH,
                            OPENSPENDING_SERVICES,
                            OAUTH_NEXT_URL,
                            OAUTH_NEXT_SERVER)
@@ -72,7 +71,7 @@ class User(object):
     def _install(self):
         if not isdir(USER_CONFIG_DIR):
             mkdir(USER_CONFIG_DIR)
-            self._cache_profile()
+            self._cache('profile')
             self._cache_token()
 
     @cached_property
@@ -87,7 +86,8 @@ class User(object):
             query = dict(jwt=self.token, service=service)
             response = self._conductor.authorize(**query)
             self._log.debug('Response: %s', response.json())
-            self._register_permissions(response, service)
+            self.permissions.update({service: response.json()})
+        self._cache('permissions')
 
     def _authenticate(self):
         response = self._conductor.authenticate(jwt=self.token)
@@ -97,7 +97,7 @@ class User(object):
         if user['authenticated']:
             self.profile = user['profile']
             self.is_authenticated = user['authenticated']
-            self._cache_profile()
+            self._cache('profile')
             self._log.info("Welcome to Open-Spending %s!", self)
         else:
             self._log.warn('Token has expired: %s', self.token)
@@ -113,14 +113,10 @@ class User(object):
         local_server.join()
         self._authenticate()
 
-    def _register_permissions(self, response, service):
-        permissions = response.json()['permissions']
-        for role, has_permission in permissions.items():
-            self.permissions[service][role] = has_permission
-
-    def _cache_profile(self):
-        with open(USER_PROFILE_FILEPATH, 'w+') as json:
-            json.write(dumps(self.profile))
+    def _cache(self, attribute):
+        filepath = join(USER_CONFIG_DIR, attribute + '.json')
+        with open(filepath, 'w+') as json:
+            json.write(dumps(getattr(self, attribute)))
 
     def _cache_token(self):
         with open(USER_TOKEN_FILEPATH, 'w+') as text:

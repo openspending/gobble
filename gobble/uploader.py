@@ -46,13 +46,13 @@ class Uploader(object):
 
     @property
     def payload(self):
-            return {
-                'metadata': {
-                    'owner': self.user.profile['idhash'],
-                    'name': str(self.user)
-                },
-                'filedata': list(self._datafile_info)
-            }
+        return {
+            'metadata': {
+                'owner': self.user.profile['idhash'],
+                'name': str(self.user)
+            },
+            'filedata': list(self._datafile_info)
+        }
 
     @property
     def _datafile_info(self):
@@ -68,6 +68,10 @@ class Uploader(object):
                     'name': resource['name']
                 }
             }
+
+    def _request_upload_url(self):
+        token = self.user.permissions['os-datastore']
+        response = APISession.request_upload_url(jwt=self.user.token)
 
 
 if __name__ == '__main__':
