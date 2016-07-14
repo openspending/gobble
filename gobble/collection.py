@@ -14,7 +14,7 @@ from datapackage import DataPackage
 from fnmatch import filter
 from os import walk
 
-from gobble.config import SCHEMA_DETECTION_THRESHOLD as THRESHOLD
+from gobble.config import DATAPACKAGE_DETECTION_THRESHOLD as THRESHOLD
 
 log = getLogger(__name__)
 

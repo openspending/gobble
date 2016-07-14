@@ -15,11 +15,11 @@ from os.path import join
 from io import open
 from json import dumps
 
-from gobble.config import HASHING_BLOCK_SIZE, ASSETS_DIR
+from gobble.config import DATAFILE_HASHING_BLOCK_SIZE, ASSETS_DIR
 from gobble.user import User
 
 
-def _get_datafile_stats(filepath, block_size=HASHING_BLOCK_SIZE):
+def _get_datafile_stats(filepath, block_size=DATAFILE_HASHING_BLOCK_SIZE):
     """Get stats on a file via iteration over its contents"""
 
     hasher = md5()
