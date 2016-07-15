@@ -41,8 +41,6 @@ def build_api_request(*endpoint, verb='GET'):
 class API(object):
     """All os-conductor REST API endpoints are defined here"""
 
-    # FIXME: the "datastore/" endpoint is not consistent with others
-
     authenticate_user = build_api_request('user', 'check')
     authorize_user = build_api_request('user', 'authorize')
     oauth_callback = build_api_request('oauth', 'callback')
