@@ -4,36 +4,37 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
-
-from _pytest.python import raises
 from future import standard_library
 
 standard_library.install_aliases()
 
-import responses
-import pytest
+from responses import RequestsMock
+from pytest import mark, raises
 
 from gobble.config import OS_URL
 from gobble.conductor import API, build_api_request
 
-request_functions = [
-    ('authorize_user', '/user/authorize', 'GET'),
-    ('oauth_callback', '/oauth/callback', 'GET'),
-    ('update_user', '/user/update', 'POST'),
-    ('search_users', '/search/user', 'GET'),
-    ('search_packages', '/search/package', 'GET'),
-    ('prepare_upload', '/datastore/', 'POST')
+
+GET = RequestsMock.GET
+POST = RequestsMock.POST
+
+
+api_endpoints = [
+    ('authorize_user', '/user/authorize', GET),
+    ('oauth_callback', '/oauth/callback', GET),
+    ('update_user', '/user/update', POST),
+    ('search_users', '/search/user', GET),
+    ('search_packages', '/search/package', GET),
+    ('prepare_upload', '/datastore/', POST)
 ]
 
 
-@responses.activate
-@pytest.mark.parametrize('function, endpoint, verb', request_functions)
-def test_api_requests_hit_correct_endpoints(function, endpoint, verb):
-    endpoint_url = OS_URL + endpoint
-    # Mock the request with responses
-    responses.add(verb, endpoint_url, status=200)
-    response = getattr(API, function)()
-    assert response.status_code == 200
+@mark.parametrize('call, endpoint, verb', api_endpoints)
+def test_api_calls_hit_correct_endpoints(call, endpoint, verb):
+    with RequestsMock() as mock:
+        mock.add(verb, OS_URL + endpoint, status=200)
+        response = getattr(API, call)()
+        assert response.status_code == 200
 
 
 def test_passing_endpoint_item_not_string_raises_type_error():
@@ -43,4 +44,12 @@ def test_passing_endpoint_item_not_string_raises_type_error():
 
 def test_build_api_request_with_invalid_verb_raise_assertion_error():
     with raises(AssertionError):
-        build_api_request('BAR', 'foo')
+        build_api_request('FOO', 'bar')
+
+
+def test_call_endpoint_with_query_parameters():
+    with RequestsMock() as mock:
+        url = OS_URL + '/baz?foo=bar&spam=eggs'
+        mock.add(GET, url, status=200, match_querystring=True)
+        response = build_api_request(GET, 'baz')(foo='bar', spam='eggs')
+        assert response.status_code == 200

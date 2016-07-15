@@ -20,14 +20,18 @@ session = Session()
 def build_api_request(verb, *endpoint):
     """Return a request function pointing to an endpoint"""
 
-    assert endpoint, 'API request must have an endpoint path'
-    assert verb in ('GET', 'POST'), 'verb must be GET or POST'
+    assert endpoint
+    assert verb in ('GET', 'POST')
 
     def build_url(endpoint_=None):
         path = '/'.join(endpoint_)
         return urljoin(OS_URL, path)
 
     def request_endpoint(payload=None, headers=None, **query):
+
+        assert not payload or isinstance(payload, dict)
+        assert not headers or isinstance(headers, dict)
+
         request_method = getattr(session, verb.lower())
         endpoint_url = build_url(endpoint_=endpoint)
         return request_method(endpoint_url,
