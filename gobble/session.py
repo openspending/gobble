@@ -115,6 +115,14 @@ class APISession(object):
         schema='http',
         verb='POST'
     )
+    request_upload_url = APIRequest(
+        OS_HOST,
+        session=session,
+        path=['datastore', 'authorize'],
+        schema='http',
+        verb='POST'
+    )
+
 
     def __str__(self):
         return 'hello'

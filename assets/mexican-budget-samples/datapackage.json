@@ -821,9 +821,9 @@
     }
   ],
   "name": "mexican-budget-samples",
-  "title": "A data-package used to test the uploader module",
-  "description": "A bundle of 9 CSV data files(100 lines each) sampled from the Mexican Federal Budget dataset",
-  "homepage": "",
+  "title": "This data-package is used to test the uploader module",
+  "description": "A bundle of 9 csv files (100 lines randomly sampled from the Mexican federal budget dataset)",
+  "homepage": "Dunno",
   "version": "0.1.0",
   "license": "MIT"
 }

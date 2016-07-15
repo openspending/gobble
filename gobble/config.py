@@ -1,4 +1,4 @@
-"""Configuration parameters for the package."""
+"""Configuration parameters for Gobble"""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -11,40 +11,29 @@ standard_library.install_aliases()
 from os.path import expanduser, join, abspath, dirname
 from os import getenv
 from pprint import pprint
-from requests import get
 
-# from gobble.utilities import Settings
 
-USER_EMAIL = 'mickey.mouse@disney.com'
+# Assign "dev.openspending.org" for development mode
+OPENSPENDING_HOST = getenv('GOBBLE_OPENSPENDING_HOST', 'next.openspending.org')
 
+# The URL where the token lands
 OAUTH_NEXT_SERVER = ('127.0.0.1', 8000)
 OAUTH_NEXT_URL = 'http://%s:%s' % OAUTH_NEXT_SERVER
-GOOGLE_OAUTH_CLIENT_ID = getenv('GOOGLE_OAUTH_CLIENT_ID')
-GOOGLE_OAUTH_CLIENT_SECRET = getenv('GOOGLE_OAUTH_CLIENT_ID')
-GOOGLE_API_URL = 'https://accounts.google.com/o/oauth2/auth'
-SCOPE = ['https://www.googleapis.com/auth/userinfo.email',
-         'https://www.googleapis.com/auth/userinfo.profile']
 
-
+# User information
 USER_CONFIG_DIR = join(expanduser('~'), '.gobble')
 USER_TOKEN_FILEPATH = join(USER_CONFIG_DIR, 'token.txt')
 USER_PROFILE_FILEPATH = join(USER_CONFIG_DIR, 'profile.json')
 
+# Test assets
 ASSETS_DIR = abspath(join(dirname(__file__), '..', 'assets'))
 EXAMPLES_DIR = abspath(join(ASSETS_DIR, 'fiscal-packages'))
 
-OS_HOST = 'next.openspending.org'
-OS_PORT = None
-
-SCHEMAS_HOST = 'http://schemas.datapackages.org/'
-FISCAL_SCHEMA = get(SCHEMAS_HOST + 'fiscal-data-package.json').json()
-DATAPACKAGE_SCHEMA = get(SCHEMAS_HOST + 'data-package.json').json()
-TABULAR_SCHEMA = get(SCHEMAS_HOST + 'tabular-data-package.json').json()
-SCHEMA_DETECTION_THRESHOLD = 1
-
-VALIDATION_FEEDBACK = {'message'}
-
-OPENSPENDING_SERVICES = ['os-datastore']
+# User unable parameters
+DATAPACKAGE_DETECTION_THRESHOLD = 1
+DATAPACKAGE_VALIDATION_FEEDBACK = {'message'}
+OPENSPENDING_SERVICES = ['os.datastore']
+DATAFILE_HASHING_BLOCK_SIZE = 65536
 
 
 if __name__ == '__main__':
