@@ -18,7 +18,7 @@ from os import mkdir
 from threading import Thread
 
 
-from gobble.session import APISession
+from gobble.conductor import API
 from gobble.config import (USER_TOKEN_FILEPATH,
                            USER_CONFIG_DIR,
                            OPENSPENDING_SERVICES,
@@ -48,7 +48,7 @@ def _listen_for_token():
 
 class User(object):
     def __init__(self):
-        self._conductor = APISession
+        self._conductor = API
         self._log = getLogger('Open-Spending')
         self.is_authenticated = False
         self.profile = defaultdict(lambda: None)
@@ -84,13 +84,13 @@ class User(object):
         for service in OPENSPENDING_SERVICES:
             self.permissions[service] = {}
             query = dict(jwt=self.token, service=service)
-            response = self._conductor.authorize(**query)
+            response = self._conductor.authorize_user(**query)
             self._log.debug('Response: %s', response.json())
             self.permissions.update({service: response.json()})
         self._cache('permissions')
 
     def _authenticate(self):
-        response = self._conductor.authenticate(jwt=self.token)
+        response = self._conductor.authenticate_user(jwt=self.token)
         self._log.debug('Response: %s', response.json())
         user = response.json()
 
@@ -105,7 +105,7 @@ class User(object):
 
     def _request_new_token(self):
         query = {'next': OAUTH_NEXT_URL}
-        response = self._conductor.authenticate(**query)
+        response = self._conductor.authenticate_user(**query)
         self._log.debug('Response: %s', response.json())
         sign_in_url = response.json()['providers']['google']['url']
         self._log.info('Please click on %s' % sign_in_url)

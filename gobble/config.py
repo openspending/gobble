@@ -12,9 +12,8 @@ from os.path import expanduser, join, abspath, dirname
 from os import getenv
 from pprint import pprint
 
-
 # Assign "dev.openspending.org" for development mode
-OPENSPENDING_HOST = getenv('GOBBLE_OPENSPENDING_HOST', 'next.openspending.org')
+OS_URL = getenv('GOBBLE_OPENSPENDING_HOST', 'http://next.openspending.org')
 
 # The URL where the token lands
 OAUTH_NEXT_SERVER = ('127.0.0.1', 8000)
@@ -31,7 +30,7 @@ EXAMPLES_DIR = abspath(join(ASSETS_DIR, 'fiscal-packages'))
 
 # User unable parameters
 DATAPACKAGE_DETECTION_THRESHOLD = 1
-DATAPACKAGE_VALIDATION_FEEDBACK = {'message'}
+VALIDATION_FEEDBACK_OPTIONS = {'message'}
 OPENSPENDING_SERVICES = ['os.datastore']
 DATAFILE_HASHING_BLOCK_SIZE = 65536
 

@@ -13,7 +13,7 @@ from datapackage import DataPackage
 from jsonschema.exceptions import ValidationError
 from pip.utils import cached_property
 
-from gobble.config import DATAPACKAGE_VALIDATION_FEEDBACK
+from gobble.config import VALIDATION_FEEDBACK_OPTIONS
 
 standard_library.install_aliases()
 
@@ -44,7 +44,7 @@ class Validator(object):
         assert isinstance(package, DataPackage), self.NOT_A_PACKAGE
         assert set(feedback).issubset(self.VALID_OPTIONS), self.INVALID_OPTION
 
-        self._feedback = feedback or DATAPACKAGE_VALIDATION_FEEDBACK
+        self._feedback = feedback or VALIDATION_FEEDBACK_OPTIONS
         self._package = package
         self._report = OrderedDict()
         self.timestamp = str(datetime.now())
