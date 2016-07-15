@@ -4,18 +4,18 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from future import standard_library
+
+standard_library.install_aliases()
 
 from json import dumps
 from datetime import datetime
-from future import standard_library
 from collections import OrderedDict
 from datapackage import DataPackage
 from jsonschema.exceptions import ValidationError
 from pip.utils import cached_property
 
 from gobble.config import VALIDATION_FEEDBACK_OPTIONS
-
-standard_library.install_aliases()
 
 
 class Validator(object):

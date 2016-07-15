@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+
+from builtins import dict
 from future import standard_library
 
 standard_library.install_aliases()
@@ -16,7 +18,7 @@ from os.path import isdir, isfile, join
 from json import dumps
 from os import mkdir
 from threading import Thread
-
+import io
 
 from gobble.conductor import API
 from gobble.config import (USER_TOKEN_FILEPATH,
@@ -36,7 +38,7 @@ class OpenSpendingException(Exception):
 class _LocalServer(SimpleHTTPRequestHandler):
     def do_GET(self):
         token = self.path[6:]
-        with open(USER_TOKEN_FILEPATH) as text:
+        with io.open(USER_TOKEN_FILEPATH) as text:
             text.write(token)
         raise SystemExit
 
@@ -77,7 +79,7 @@ class User(object):
     @cached_property
     def token(self):
         if isfile(USER_TOKEN_FILEPATH):
-            with open(USER_TOKEN_FILEPATH) as cache:
+            with io.open(USER_TOKEN_FILEPATH) as cache:
                 return cache.read()
 
     def _get_permissions(self):
@@ -115,11 +117,13 @@ class User(object):
 
     def _cache(self, attribute):
         filepath = join(USER_CONFIG_DIR, attribute + '.json')
-        with open(filepath, 'w+') as json:
-            json.write(dumps(getattr(self, attribute)))
+        with io.open(filepath, 'w+', encoding='utf-8') as cache:
+            cache.write(dumps(getattr(self, attribute),
+                              ensure_ascii=False,
+                              indent=2))
 
     def _cache_token(self):
-        with open(USER_TOKEN_FILEPATH, 'w+') as text:
+        with io.open(USER_TOKEN_FILEPATH, 'w+') as text:
             text.write(self.token)
 
     def __str__(self):

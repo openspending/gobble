@@ -8,6 +8,7 @@ from future import standard_library
 
 standard_library.install_aliases()
 
+from builtins import str
 from datapackage import DataPackage
 from base64 import b64encode
 from hashlib import md5
@@ -70,8 +71,9 @@ class Uploader(object):
             }
 
     def _request_upload_url(self):
-        token = self.user.permissions['os-datastore']
-        response = APISession.request_upload_url(jwt=self.user.token)
+        # token = self.user.permissions['os-datastore']
+        # response = APISession.request_upload_url(jwt=self.user.token)
+        pass
 
 
 if __name__ == '__main__':
