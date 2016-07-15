@@ -10,29 +10,28 @@ from future import standard_library
 
 standard_library.install_aliases()
 
-from responses import activate, GET, POST, add
-from pytest import mark
+import responses
+import pytest
 
 from gobble.config import OS_URL
 from gobble.conductor import API, build_api_request
 
-
 request_functions = [
-    ('authorize_user', '/user/authorize', GET),
-    ('oauth_callback', '/oauth/callback', GET),
-    ('update_user', '/user/update', POST),
-    ('search_users', '/search/user', GET),
-    ('search_packages', '/search/package', GET),
-    ('prepare_upload', '/datastore/', POST)
+    ('authorize_user', '/user/authorize', 'GET'),
+    ('oauth_callback', '/oauth/callback', 'GET'),
+    ('update_user', '/user/update', 'POST'),
+    ('search_users', '/search/user', 'GET'),
+    ('search_packages', '/search/package', 'GET'),
+    ('prepare_upload', '/datastore/', 'POST')
 ]
 
 
-@activate
-@mark.parametrize('function, endpoint, verb', request_functions)
+@responses.activate
+@pytest.mark.parametrize('function, endpoint, verb', request_functions)
 def test_api_requests_hit_correct_endpoints(function, endpoint, verb):
     endpoint_url = OS_URL + endpoint
     # Mock the request with responses
-    add(verb, endpoint_url, status=200)
+    responses.add(verb, endpoint_url, status=200)
     response = getattr(API, function)()
     assert response.status_code == 200
 
