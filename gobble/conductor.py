@@ -1,4 +1,4 @@
-"""This module defines all os-conductor REST API endpoints"""
+"""This module defines all OS-Conductor API endpoints"""
 
 from __future__ import unicode_literals
 from __future__ import print_function
@@ -8,47 +8,49 @@ from future import standard_library
 
 standard_library.install_aliases()
 
+from munch import Munch
 from requests import Session
-from requests.compat import urljoin
+from urllib.parse import urlencode, urlunsplit, urlsplit, urljoin
 
-from gobble.config import OS_URL
+from gobble.config import OS_URL, log
 
-# Initialize one session for all API calls
+
+# One session for all API calls
 session = Session()
 
 
-def build_api_request(verb, *endpoint):
-    """Return a request function pointing to an endpoint"""
+def build_request_caller(verb, *path):
+    """Return a function that calls an API endpoint"""
 
-    assert endpoint
-    assert verb in ('GET', 'POST')
+    def send_request(headers=None, json=None, **query):
+        """Send a request to an API endpoint"""
 
-    def build_url(endpoint_=None):
-        path = '/'.join(endpoint_)
-        return urljoin(OS_URL, path)
+        method = verb.lower()
+        caller = getattr(session, method)
+        endpoint = urljoin(OS_URL, '/'.join(path))
+        parts = urlsplit(endpoint)
 
-    def request_endpoint(payload=None, headers=None, **query):
+        parameters = tuple(query.items())
+        safe_query = urlencode(parameters)
+        updated_parts = parts._replace(query=safe_query)
 
-        assert not payload or isinstance(payload, dict)
-        assert not headers or isinstance(headers, dict)
+        url = urlunsplit(updated_parts)
 
-        request_method = getattr(session, verb.lower())
-        endpoint_url = build_url(endpoint_=endpoint)
-        return request_method(endpoint_url,
-                              headers=headers,
-                              params=query,
-                              json=payload)
+        log.debug('Request url: %s', url)
+        log.debug('Request payload: %s', json)
+        log.debug('Request headers: %s', headers)
 
-    return request_endpoint
+        return caller(url, json=json, headers=headers)
+
+    return send_request
 
 
-class API(object):
-    """All os-conductor REST API endpoints are defined here"""
+API = Munch()
 
-    authenticate_user = build_api_request('GET', 'user', 'check')
-    authorize_user = build_api_request('GET', 'user', 'authorize')
-    oauth_callback = build_api_request('GET', 'oauth', 'callback')
-    update_user = build_api_request('POST', 'user', 'update')
-    search_users = build_api_request('GET', 'search', 'user')
-    search_packages = build_api_request('GET', 'search', 'package')
-    prepare_upload = build_api_request('POST', 'datastore/')
+API.authenticate_user = build_request_caller('GET', 'user', 'check')
+API.authorize_user = build_request_caller('GET', 'user', 'authorize')
+API.oauth_callback = build_request_caller('GET', 'oauth', 'callback')
+API.update_user = build_request_caller('POST', 'user', 'update')
+API.search_users = build_request_caller('GET', 'search', 'user')
+API.search_packages = build_request_caller('GET', 'search', 'package')
+API.prepare_upload = build_request_caller('POST', 'datastore/')

@@ -8,9 +8,15 @@ from future import standard_library
 
 standard_library.install_aliases()
 
+from logging import basicConfig, getLogger, DEBUG
 from os.path import expanduser, join, abspath, dirname
 from os import getenv
 from pprint import pprint
+
+
+basicConfig(format='[%(name)s] [%(module)s] %(message)s', level=DEBUG)
+log = getLogger('Gobble')
+
 
 # Assign "dev.openspending.org" for development mode
 OS_URL = getenv('GOBBLE_OPENSPENDING_URL', 'http://next.openspending.org')
