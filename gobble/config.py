@@ -13,7 +13,7 @@ from os import getenv
 from pprint import pprint
 
 # Assign "dev.openspending.org" for development mode
-OS_URL = getenv('GOBBLE_OPENSPENDING_HOST', 'http://next.openspending.org')
+OS_URL = getenv('GOBBLE_OPENSPENDING_URL', 'http://next.openspending.org')
 
 # The URL where the token lands
 OAUTH_NEXT_SERVER = ('127.0.0.1', 8000)

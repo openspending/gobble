@@ -31,16 +31,17 @@ request_functions = [
 @mark.parametrize('function, endpoint, verb', request_functions)
 def test_api_requests_hit_correct_endpoints(function, endpoint, verb):
     endpoint_url = OS_URL + endpoint
-    add(verb, endpoint_url, status=200)  # Mock the request
-    response = getattr(API, function)(endpoint_url)
+    # Mock the request with responses
+    add(verb, endpoint_url, status=200)
+    response = getattr(API, function)()
     assert response.status_code == 200
 
 
-def test_passing_endpoint_items_not_strings_raises_type_error():
+def test_passing_endpoint_item_not_string_raises_type_error():
     with raises(TypeError):
-        build_api_request('string', 1000, True)(foo='bar')
+        build_api_request('GET', 1000)()
 
 
 def test_build_api_request_with_invalid_verb_raise_assertion_error():
     with raises(AssertionError):
-        build_api_request('foo', verb='BAR')
+        build_api_request('BAR', 'foo')

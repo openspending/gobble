@@ -17,7 +17,7 @@ from gobble.config import OS_URL
 session = Session()
 
 
-def build_api_request(verb='GET', *endpoint):
+def build_api_request(verb, *endpoint):
     """Return a request function pointing to an endpoint"""
 
     assert endpoint, 'API request must have an endpoint path'
@@ -41,10 +41,10 @@ def build_api_request(verb='GET', *endpoint):
 class API(object):
     """All os-conductor REST API endpoints are defined here"""
 
-    authenticate_user = build_api_request('user', 'check')
-    authorize_user = build_api_request('user', 'authorize')
-    oauth_callback = build_api_request('oauth', 'callback')
-    update_user = build_api_request('user', 'update', verb='POST')
-    search_users = build_api_request('search', 'user')
-    search_packages = build_api_request('search', 'package')
-    prepare_upload = build_api_request('datastore/', verb='POST')
+    authenticate_user = build_api_request('GET', 'user', 'check')
+    authorize_user = build_api_request('GET', 'user', 'authorize')
+    oauth_callback = build_api_request('GET', 'oauth', 'callback')
+    update_user = build_api_request('POST', 'user', 'update')
+    search_users = build_api_request('GET', 'search', 'user')
+    search_packages = build_api_request('GET', 'search', 'package')
+    prepare_upload = build_api_request('POST', 'datastore/')
