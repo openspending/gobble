@@ -17,7 +17,7 @@ from gobble.config import OS_URL
 session = Session()
 
 
-def build_api_request(*endpoint, verb='GET'):
+def build_api_request(verb='GET', *endpoint):
     """Return a request function pointing to an endpoint"""
 
     assert endpoint, 'API request must have an endpoint path'
