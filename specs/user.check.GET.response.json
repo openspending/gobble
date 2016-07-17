@@ -1,0 +1,12 @@
+{
+    "authenticated": true,
+    "profile":
+        {
+            "id": "google:107630624453400004600",
+            "name": "Mickey Mouse",
+            "email": "mickey.mouse@disney.com",
+            "avatar_url": "https://lh5.googleusercontent.com/-rxV_5Yr0000/AAAAAAAAAAI/AAAAAAAAA7U/TFWBCQ6OFt8/photo.jpg",
+            "idhash": "5df4a7b06a940c992d1c44525daf0000",
+            "username": "mickey-mouse"
+        }
+}
