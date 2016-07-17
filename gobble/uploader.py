@@ -50,7 +50,7 @@ class Uploader(object):
         return {
             'metadata': {
                 'owner': self.user.profile['idhash'],
-                'name': str(self.user)
+                'name': self.package.metadata['name']
             },
             'filedata': list(self._datafile_info)
         }
