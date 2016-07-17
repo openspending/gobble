@@ -77,8 +77,8 @@ class Uploader(object):
 
 
 if __name__ == '__main__':
-    descriptor = join(ASSETS_DIR, 'mexican-budget-samples', 'datapackage.json')
-    payload = join(ASSETS_DIR, 'mexican-budget-samples', 'payload.json')
+    descriptor = join(ASSETS_DIR, 'datapackage', 'datapackage.json')
+    payload = join(ASSETS_DIR, 'datapackage', 'payload.json')
 
     user_ = User()
     package_ = DataPackage(descriptor)

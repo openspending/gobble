@@ -32,7 +32,7 @@ USER_PROFILE_FILEPATH = join(USER_CONFIG_DIR, 'profile.json')
 
 # Test assets
 ASSETS_DIR = abspath(join(dirname(__file__), '..', 'assets'))
-EXAMPLES_DIR = abspath(join(ASSETS_DIR, 'fiscal-packages'))
+EXAMPLES_DIR = abspath(join(ASSETS_DIR, 'collection'))
 
 # User unable parameters
 DATAPACKAGE_DETECTION_THRESHOLD = 1
