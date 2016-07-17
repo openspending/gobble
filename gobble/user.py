@@ -23,12 +23,12 @@ import io
 from gobble.conductor import API
 from gobble.config import (USER_TOKEN_FILEPATH,
                            USER_CONFIG_DIR,
-                           OPENSPENDING_SERVICES,
                            OAUTH_NEXT_URL,
                            OAUTH_NEXT_SERVER)
 
 
 basicConfig(format='[%(module)s] %(message)s', level=DEBUG)
+OPENSPENDING_SERVICES = ['os.datastore']
 
 
 class OpenSpendingException(Exception):
