@@ -10,28 +10,10 @@ standard_library.install_aliases()
 
 from json import loads
 from os.path import isfile
-from shutil import rmtree
-from munch import Munch
-from pytest import fixture
 from io import open
 
-from gobble.configuration import Config
-
-
-@fixture(scope='module')
-def dummy_config(request):
-    dummy_defaults = {
-        'CONFIG_FILE': '/tmp/gobble-dummy/dummy.json'
-    }
-
-    def delete():
-        try:
-            rmtree('/tmp/gobble-dummy')
-        except OSError:
-            pass
-
-    request.addfinalizer(delete)
-    return Config(dummy_defaults).save()
+# noinspection PyUnresolvedReferences
+from tests.fixtures import dummy_config, CONFIG_FILE
 
 
 # noinspection PyShadowingNames
@@ -46,7 +28,7 @@ def test_config_object_is_correct_length(dummy_config):
 
 # noinspection PyShadowingNames
 def test_config_object_is_instance_of_munch_class(dummy_config):
-    assert isinstance(dummy_config, Munch)
+    assert isinstance(dummy_config, dict)
 
 
 # noinspection PyShadowingNames
