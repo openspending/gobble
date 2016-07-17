@@ -50,4 +50,4 @@ def test_config_file_has_been_created(dummy_config):
 def test_loading_config_file_returns_original_data(dummy_config):
     with open(dummy_config.CONFIG_FILE) as file:
         config_dict = loads(file.read())
-        assert config_dict == {'CONFIG_FILE': '/tmp/gobble-dummy/dummy.json'}
+        assert config_dict == {'CONFIG_FILE': CONFIG_FILE}
