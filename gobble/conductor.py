@@ -12,7 +12,8 @@ from munch import Munch
 from requests import Session
 from urllib.parse import urlencode, urlunsplit, urlsplit, urljoin
 
-from gobble.config import OS_URL, log
+from gobble.configuration import config
+from gobble.logger import log
 
 
 # One session for all API calls
@@ -27,7 +28,7 @@ def build_request_caller(verb, *path):
 
         method = verb.lower()
         caller = getattr(session, method)
-        endpoint = urljoin(OS_URL, '/'.join(path))
+        endpoint = urljoin(config.OS_URL, '/'.join(path))
         parts = urlsplit(endpoint)
 
         parameters = tuple(query.items())
