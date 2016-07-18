@@ -20,6 +20,7 @@ from os import mkdir
 from threading import Thread
 import io
 
+from gobble.logger import log
 from gobble.conductor import API
 from gobble.config import (USER_TOKEN_FILEPATH,
                            USER_CONFIG_DIR,
@@ -93,7 +94,11 @@ class User(object):
 
     def _authenticate(self):
         response = self._conductor.authenticate_user(jwt=self.token)
-        self._log.debug('Response: %s', response.json())
+
+        if response.status_code != 200:
+            log.debug('Response %s: %s', response.status_code, response.reason)
+            raise OpenSpendingException
+
         user = response.json()
 
         if user['authenticated']:
@@ -104,6 +109,9 @@ class User(object):
         else:
             self._log.warn('Token has expired: %s', self.token)
             self._request_new_token()
+
+        self._log.debug('Response: %s', response.json())
+        return user
 
     def _request_new_token(self):
         query = {'next': OAUTH_NEXT_URL}
