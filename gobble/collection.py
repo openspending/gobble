@@ -52,7 +52,7 @@ class Collection(object):
 
     def ingest(self, filepath):
         try:
-            package = DataPackage(metadata=filepath, schema=self.schema)
+            package = DataPackage(filepath, schema=self.schema)
             return package
         except DataPackageException as error:
             log.warn(self.BAD_PACKAGE_MSG, filepath, error)
