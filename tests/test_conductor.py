@@ -11,7 +11,7 @@ standard_library.install_aliases()
 from responses import RequestsMock
 from pytest import mark, raises
 
-from gobble.config import OS_URL
+from gobble.configuration import config
 from gobble.conductor import API, build_request_caller
 
 
@@ -32,7 +32,7 @@ api_endpoints = [
 @mark.parametrize('call, endpoint, verb', api_endpoints)
 def test_api_calls_hit_correct_endpoints(call, endpoint, verb):
     with RequestsMock() as mock:
-        mock.add(verb, OS_URL + endpoint, status=200)
+        mock.add(verb, config.OS_URL + endpoint, status=200)
         response = getattr(API, call)()
         assert response.status_code == 200
 
@@ -44,7 +44,7 @@ def test_passing_endpoint_item_not_string_raises_type_error():
 
 def test_call_endpoint_with_query_parameters():
     with RequestsMock() as mock:
-        url = OS_URL + '/baz?foo=bar&spam=eggs'
+        url = config.OS_URL + '/baz?foo=bar&spam=eggs'
         mock.add(GET, url, status=200, match_querystring=True)
         response = build_request_caller(GET, 'baz')(foo='bar', spam='eggs')
         assert response.status_code == 200
