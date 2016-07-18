@@ -37,7 +37,8 @@ def build_request_caller(verb, *path):
 
         url = urlunsplit(updated_parts)
 
-        log.debug('Request url: %s', url)
+        log.debug('Request endpoint: %s', endpoint)
+        log.debug('Request query: %s', safe_query)
         log.debug('Request payload: %s', json)
         log.debug('Request headers: %s', headers)
 
@@ -46,12 +47,11 @@ def build_request_caller(verb, *path):
     return send_request
 
 
-API = Munch()
-
-API.authenticate_user = build_request_caller('GET', 'user', 'check')
-API.authorize_user = build_request_caller('GET', 'user', 'authorize')
-API.oauth_callback = build_request_caller('GET', 'oauth', 'callback')
-API.update_user = build_request_caller('POST', 'user', 'update')
-API.search_users = build_request_caller('GET', 'search', 'user')
-API.search_packages = build_request_caller('GET', 'search', 'package')
-API.prepare_upload = build_request_caller('POST', 'datastore/')
+class API(object):
+    authenticate_user = build_request_caller('GET', 'user', 'check')
+    authorize_user = build_request_caller('GET', 'user', 'authorize')
+    oauth_callback = build_request_caller('GET', 'oauth', 'callback')
+    update_user = build_request_caller('POST', 'user', 'update')
+    search_users = build_request_caller('GET', 'search', 'user')
+    search_packages = build_request_caller('GET', 'search', 'package')
+    request_upload = build_request_caller('POST', 'datastore/')
