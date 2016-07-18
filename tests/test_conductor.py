@@ -25,7 +25,7 @@ api_endpoints = [
     ('update_user', '/user/update', POST),
     ('search_users', '/search/user', GET),
     ('search_packages', '/search/package', GET),
-    ('prepare_upload', '/datastore/', POST)
+`    ('request_upload', '/datastore/', POST)
 ]
 
 
