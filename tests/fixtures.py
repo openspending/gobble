@@ -1,19 +1,24 @@
 """Fixtures for test modules"""
 
-from os.path import abspath, join, dirname, splitext
+from json import loads, dumps
+from os.path import abspath, join, dirname
 from sys import modules
 from os import listdir
+
+from future.backports.urllib.parse import urljoin
 from pytest import fixture
 from shutil import rmtree
 from responses import RequestsMock
 
 from gobble.configuration import Config, config
+from gobble.logger import log
 
 
 ROOT_DIR = abspath(join(dirname(modules['gobble'].__file__), '..'))
 PACKAGE_FILE = join(ROOT_DIR, 'assets', 'datapackage', 'datapackage.json')
 CONFIG_FILE = '/tmp/gobble-dummy/dummy.json'
 UPLOADER_PAYLOAD = join(ROOT_DIR, 'assets', 'datapackage', 'payload.json')
+RESPONSES_FILE = join(ROOT_DIR, 'assets', 'responses.json')
 
 
 @fixture
@@ -33,18 +38,18 @@ def dummy_config(request):
 
 @fixture
 def dummy_requests():
-    """Return mock responses build from the specs folder"""
+    """Mock responses using template objects from the specs folder"""
 
     mock = RequestsMock(assert_all_requests_are_fired=False)
     specs = join(ROOT_DIR, 'specs')
 
     def parse(filename_):
-        base, _ = splitext(filename_)
-        parts = base.split('.')
-        verb_ = parts.pop()
-        endpoint_ = '/' + '/'.join(parts)
-        url_ = config.OS_URL + endpoint_
-        return verb_, url_
+        parts = filename_.split('.')
+        endpoint_ = parts[0:2]
+        verb_ = parts[-3]
+        direction_ = parts[-2]
+        url_ = config.OS_URL + '/' + '/'.join(endpoint_)
+        return verb_, url_, direction_
 
     def read(filename_):
         filepath = join(specs, filename_)
@@ -52,8 +57,27 @@ def dummy_requests():
             return json_.read()
 
     for filename in listdir(specs):
-        verb, url = parse(filename)
-        json = read(filename)
-        mock.add(verb, url, body=json)
+        verb, url, direction = parse(filename)
+        if direction == 'response':
+            json = read(filename)
+            mock.add(verb, url, body=json)
+            log.debug('Mocking %s %s', verb, url)
+            log.debug('Expecting back %s', loads(json))
 
     return mock
+
+
+def get_mock_request(slug):
+    """Return """
+    with open(RESPONSES_FILE) as json:
+        specs = loads(json.read())
+
+    verb = specs[slug]['method']
+    url = urljoin(config.OS_URL, specs[slug]['endpoint'])
+    status = specs[slug]['response']['status']
+    json = specs[slug]['response']['json']
+
+    log.debug('Mocking %s %s', verb, url)
+    log.debug('Expecting back [%s] %s', status, dumps(json))
+
+    return verb, url, status, json

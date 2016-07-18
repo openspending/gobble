@@ -1,0 +1,62 @@
+{
+  "get-permissions": {
+    "endpoint": "user/authorize",
+    "method": "GET",
+    "response": {
+      "status": 200,
+      "json": {
+        "os.datastore": {
+          "token": "0000eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJwZXJtaXNzaW9ucyI6eyJkYXRhcGFja2FnZS11cGxvYWQiOnRydWV9LCJ1c2VyaWQiOiI1ZGY0YTdiMDZhOTQwYzk5MmQxYzQ0NTI1ZGFmZjQ3YiIsInNlcnZpY2UiOiJvcy5kYXRhc3RvcmUifQ.KNhZkQngclDCsa-g9CPqdP_S-hqB78N-vxVcIzHuh6ipK0cxHqcubqBMTMXpirvPau393Nv2cfMfHAl5pEfuPPH4yrtmPeNJhQSmjQK3hXTQP0tVXvAZfjzcZ5swVrXpi55rtmrJQF7WVPQYqC3d2zhZV09bchHKiMqorHp0Geo2NaC8XOC4vcfXpCCpaEcCeoR-dXqZJ5E2nbF9SGKhpwG_ttvWiWoCX_K2_MDVrnpUopv2KcGV1DZ7PweuJQ8xwKqfgbixhFP4ebASXcfk-EQ3mrxM7LY773Cx320VopHDXefJ6gX4EeEquZl6p5-0nyC3Jnw13VL5DpcQVWkTvA",
+          "userid": "5df4a7b06a940c992d1c44525daf0000",
+          "service": "os.datastore",
+          "permissions": {
+            "datapackage-upload": true
+          }
+        }
+      }
+    }
+  },
+  "request-upload": {
+    "endpoint": "datastore/",
+    "method": "POST",
+    "response": {
+      "status": 200,
+      "json": {
+        "url": "my-upload-url"
+      }
+    }
+  },
+  "authenticate": {
+    "endpoint": "user/check",
+    "method": "GET",
+    "response": {
+      "status": 200,
+      "json": {
+        "authenticated": true,
+        "profile": {
+          "id": "google:107630624453400004600",
+          "name": "Mickey Mouse",
+          "email": "mickey.mouse@disney.com",
+          "avatar_url": "https://lh5.googleusercontent.com/-rxV_5Yr0000/AAAAAAAAAAI/AAAAAAAAA7U/TFWBCQ6OFt8/photo.jpg",
+          "idhash": "5df4a7b06a940c992d1c44525daf0000",
+          "username": "mickey-mouse"
+        }
+      }
+    }
+  },
+  "authenticate-without-token": {
+    "endpoint": "user/check",
+    "method": "GET",
+    "response": {
+      "status": 200,
+      "json": {
+        "authenticated": false,
+        "providers": {
+          "google": {
+            "url": "https://my.link.to.google.com/with-the-next-url-attached"
+          }
+        }
+      }
+    }
+  }
+}
