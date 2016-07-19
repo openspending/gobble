@@ -15,7 +15,6 @@ from gobble.user import User
 from gobble.uploader import Uploader
 # noinspection PyUnresolvedReferences
 from tests.fixtures import (get_mock_request,
-                            dummy_requests,
                             ROOT_DIR,
                             PACKAGE_FILE,
                             UPLOADER_PAYLOAD)
