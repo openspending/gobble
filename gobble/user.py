@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+
+from builtins import dict
 from future import standard_library
 
 standard_library.install_aliases()
@@ -16,17 +18,18 @@ from os.path import isdir, isfile, join
 from json import dumps
 from os import mkdir
 from threading import Thread
+import io
 
-
-from gobble.session import APISession
+from gobble.logger import log
+from gobble.conductor import API
 from gobble.config import (USER_TOKEN_FILEPATH,
                            USER_CONFIG_DIR,
-                           OPENSPENDING_SERVICES,
                            OAUTH_NEXT_URL,
                            OAUTH_NEXT_SERVER)
 
 
 basicConfig(format='[%(module)s] %(message)s', level=DEBUG)
+OPENSPENDING_SERVICES = ['os.datastore']
 
 
 class OpenSpendingException(Exception):
@@ -36,7 +39,7 @@ class OpenSpendingException(Exception):
 class _LocalServer(SimpleHTTPRequestHandler):
     def do_GET(self):
         token = self.path[6:]
-        with open(USER_TOKEN_FILEPATH) as text:
+        with io.open(USER_TOKEN_FILEPATH) as text:
             text.write(token)
         raise SystemExit
 
@@ -48,7 +51,7 @@ def _listen_for_token():
 
 class User(object):
     def __init__(self):
-        self._conductor = APISession
+        self._conductor = API
         self._log = getLogger('Open-Spending')
         self.is_authenticated = False
         self.profile = defaultdict(lambda: None)
@@ -77,21 +80,25 @@ class User(object):
     @cached_property
     def token(self):
         if isfile(USER_TOKEN_FILEPATH):
-            with open(USER_TOKEN_FILEPATH) as cache:
+            with io.open(USER_TOKEN_FILEPATH) as cache:
                 return cache.read()
 
     def _get_permissions(self):
         for service in OPENSPENDING_SERVICES:
             self.permissions[service] = {}
             query = dict(jwt=self.token, service=service)
-            response = self._conductor.authorize(**query)
+            response = self._conductor.authorize_user(**query)
             self._log.debug('Response: %s', response.json())
             self.permissions.update({service: response.json()})
         self._cache('permissions')
 
     def _authenticate(self):
-        response = self._conductor.authenticate(jwt=self.token)
-        self._log.debug('Response: %s', response.json())
+        response = self._conductor.authenticate_user(jwt=self.token)
+
+        if response.status_code != 200:
+            log.debug('Response %s: %s', response.status_code, response.reason)
+            raise OpenSpendingException
+
         user = response.json()
 
         if user['authenticated']:
@@ -103,9 +110,12 @@ class User(object):
             self._log.warn('Token has expired: %s', self.token)
             self._request_new_token()
 
+        self._log.debug('Response: %s', response.json())
+        return user
+
     def _request_new_token(self):
         query = {'next': OAUTH_NEXT_URL}
-        response = self._conductor.authenticate(**query)
+        response = self._conductor.authenticate_user(**query)
         self._log.debug('Response: %s', response.json())
         sign_in_url = response.json()['providers']['google']['url']
         self._log.info('Please click on %s' % sign_in_url)
@@ -115,11 +125,13 @@ class User(object):
 
     def _cache(self, attribute):
         filepath = join(USER_CONFIG_DIR, attribute + '.json')
-        with open(filepath, 'w+') as json:
-            json.write(dumps(getattr(self, attribute)))
+        with io.open(filepath, 'w+', encoding='utf-8') as cache:
+            cache.write(dumps(getattr(self, attribute),
+                              ensure_ascii=False,
+                              indent=2))
 
     def _cache_token(self):
-        with open(USER_TOKEN_FILEPATH, 'w+') as text:
+        with io.open(USER_TOKEN_FILEPATH, 'w+') as text:
             text.write(self.token)
 
     def __str__(self):

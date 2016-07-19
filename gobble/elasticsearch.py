@@ -4,11 +4,13 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from builtins import dict
+from builtins import zip
 from future import standard_library
 standard_library.install_aliases()
 
 from pprint import pprint
-from gobble.session import APISession
+from gobble.conductor import API
 
 # TO DO: Searching a package by key value returns the whole list
 # TO DO: merge the 3 search classes into one
@@ -49,13 +51,13 @@ class ElasticSearch(object):
 
 class Contributors(ElasticSearch):
     kind = 'user'
-    search = APISession.search_users
+    search = API.search_users
     searchable_keys = ['name']
 
 
 class Packages(ElasticSearch):
     kind = 'package'
-    search = APISession.search_packages
+    search = API.search_packages
     searchable_keys = [
         'title',
         'author',
@@ -70,7 +72,7 @@ if __name__ == '__main__':
     contributors = Contributors()
     packages = Packages()
 
-    pprint(contributors.all)
+    # pprint(contributors.all)
     pprint(packages.all)
     pprint(contributors.find(name='aura'))
     pprint(packages.find(author='Vlad'))

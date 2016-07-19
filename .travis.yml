@@ -10,11 +10,14 @@ python:
   - 3.4
   - 3.5
 
+before_install:
+  - mkdir ~/.gobble && echo "dummy-token" > ~/.gobble/token.txt
+
 install:
   - pip install --upgrade -r requirements.dev.txt
 
 script:
-  - pylama --ignore=E402 gobble
+  - pylama --ignore=E402,W0611,W0404 gobble--verbose
   - py.test --verbose --cov=gobble tests
 
 after_success:

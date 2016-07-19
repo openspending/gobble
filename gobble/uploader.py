@@ -8,15 +8,14 @@ from future import standard_library
 
 standard_library.install_aliases()
 
-from datapackage import DataPackage
+from builtins import str
 from base64 import b64encode
 from hashlib import md5
 from os.path import join
 from io import open
-from json import dumps
 
-from gobble.config import DATAFILE_HASHING_BLOCK_SIZE, ASSETS_DIR
-from gobble.user import User
+from gobble.config import DATAFILE_HASHING_BLOCK_SIZE
+from gobble.conductor import API
 
 
 def _get_datafile_stats(filepath, block_size=DATAFILE_HASHING_BLOCK_SIZE):
@@ -49,7 +48,7 @@ class Uploader(object):
         return {
             'metadata': {
                 'owner': self.user.profile['idhash'],
-                'name': str(self.user)
+                'name': self.package.metadata['name']
             },
             'filedata': list(self._datafile_info)
         }
@@ -69,17 +68,6 @@ class Uploader(object):
                 }
             }
 
-    def _request_upload_url(self):
-        token = self.user.permissions['os-datastore']
-        response = APISession.request_upload_url(jwt=self.user.token)
-
-
-if __name__ == '__main__':
-    descriptor = join(ASSETS_DIR, 'mexican-budget-samples', 'datapackage.json')
-    payload = join(ASSETS_DIR, 'mexican-budget-samples', 'payload.json')
-
-    user_ = User()
-    package_ = DataPackage(descriptor)
-    uploader = Uploader(user_, package_)
-
-    open(payload, 'w+').write(dumps(uploader.payload, indent=2))
+    def request_upload(self):
+        token = self.user.permissions['os.datastore']
+        return API.request_upload(jwt=token)

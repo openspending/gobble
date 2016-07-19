@@ -4,3 +4,4 @@ requests-futures
 datapackage
 goodtables
 boto
+munch

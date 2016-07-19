@@ -4,18 +4,18 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from future import standard_library
+
+standard_library.install_aliases()
 
 from json import dumps
 from datetime import datetime
-from future import standard_library
 from collections import OrderedDict
 from datapackage import DataPackage
 from jsonschema.exceptions import ValidationError
 from pip.utils import cached_property
 
-from gobble.config import DATAPACKAGE_VALIDATION_FEEDBACK
-
-standard_library.install_aliases()
+from gobble.config import VALIDATION_FEEDBACK_OPTIONS
 
 
 class Validator(object):
@@ -44,7 +44,7 @@ class Validator(object):
         assert isinstance(package, DataPackage), self.NOT_A_PACKAGE
         assert set(feedback).issubset(self.VALID_OPTIONS), self.INVALID_OPTION
 
-        self._feedback = feedback or DATAPACKAGE_VALIDATION_FEEDBACK
+        self._feedback = feedback or VALIDATION_FEEDBACK_OPTIONS
         self._package = package
         self._report = OrderedDict()
         self.timestamp = str(datetime.now())
@@ -61,7 +61,7 @@ class Validator(object):
 
     @property
     def name(self):
-        return self._package.metadata.get('name')
+        return self._package.descriptor.get('name')
 
     @property
     def is_valid(self):
@@ -80,7 +80,7 @@ class Validator(object):
     @property
     def _package_info(self):
         for attribute in self._package.required_attributes:
-            value = self._package.metadata.get(attribute)
+            value = self._package.descriptor.get(attribute)
             yield attribute, value
 
     @property

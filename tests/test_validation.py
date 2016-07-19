@@ -23,7 +23,7 @@ def collect_packages():
     for root, folders, files in walk(EXAMPLES_DIR):
         for filename in filter(files, '*.json'):
             filepath = join(root, filename)
-            package = DataPackage(metadata=filepath, schema='fiscal')
+            package = DataPackage(filepath, schema='fiscal')
             package.__setattr__('filepath', filepath)
             yield package
 

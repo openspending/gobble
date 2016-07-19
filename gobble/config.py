@@ -8,13 +8,18 @@ from future import standard_library
 
 standard_library.install_aliases()
 
+from logging import basicConfig, getLogger, DEBUG
 from os.path import expanduser, join, abspath, dirname
 from os import getenv
 from pprint import pprint
 
 
+basicConfig(format='[%(name)s] [%(module)s] %(message)s', level=DEBUG)
+log = getLogger('Gobble')
+
+
 # Assign "dev.openspending.org" for development mode
-OPENSPENDING_HOST = getenv('GOBBLE_OPENSPENDING_HOST', 'next.openspending.org')
+OS_URL = getenv('GOBBLE_OPENSPENDING_URL', 'http://next.openspending.org')
 
 # The URL where the token lands
 OAUTH_NEXT_SERVER = ('127.0.0.1', 8000)
@@ -27,12 +32,11 @@ USER_PROFILE_FILEPATH = join(USER_CONFIG_DIR, 'profile.json')
 
 # Test assets
 ASSETS_DIR = abspath(join(dirname(__file__), '..', 'assets'))
-EXAMPLES_DIR = abspath(join(ASSETS_DIR, 'fiscal-packages'))
+EXAMPLES_DIR = abspath(join(ASSETS_DIR, 'collection'))
 
 # User unable parameters
 DATAPACKAGE_DETECTION_THRESHOLD = 1
-DATAPACKAGE_VALIDATION_FEEDBACK = {'message'}
-OPENSPENDING_SERVICES = ['os.datastore']
+VALIDATION_FEEDBACK_OPTIONS = {'message'}
 DATAFILE_HASHING_BLOCK_SIZE = 65536
 
 
