@@ -61,7 +61,7 @@ class Validator(object):
 
     @property
     def name(self):
-        return self._package.metadata.get('name')
+        return self._package.descriptor.get('name')
 
     @property
     def is_valid(self):
@@ -80,7 +80,7 @@ class Validator(object):
     @property
     def _package_info(self):
         for attribute in self._package.required_attributes:
-            value = self._package.metadata.get(attribute)
+            value = self._package.descriptor.get(attribute)
             yield attribute, value
 
     @property
