@@ -36,37 +36,6 @@ def dummy_config(request):
     return Config(dummy_defaults).save()
 
 
-@fixture
-def dummy_requests():
-    """Mock responses using template objects from the specs folder"""
-
-    mock = RequestsMock(assert_all_requests_are_fired=False)
-    specs = join(ROOT_DIR, 'specs')
-
-    def parse(filename_):
-        parts = filename_.split('.')
-        endpoint_ = parts[0:2]
-        verb_ = parts[-3]
-        direction_ = parts[-2]
-        url_ = config.OS_URL + '/' + '/'.join(endpoint_)
-        return verb_, url_, direction_
-
-    def read(filename_):
-        filepath = join(specs, filename_)
-        with open(filepath) as json_:
-            return json_.read()
-
-    for filename in listdir(specs):
-        verb, url, direction = parse(filename)
-        if direction == 'response':
-            json = read(filename)
-            mock.add(verb, url, body=json)
-            log.debug('Mocking %s %s', verb, url)
-            log.debug('Expecting back %s', loads(json))
-
-    return mock
-
-
 def get_mock_request(slug):
     """Return """
     with open(RESPONSES_FILE) as json:
