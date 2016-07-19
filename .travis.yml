@@ -11,7 +11,7 @@ python:
   - 3.5
 
 before_install:
-  - cd && mkdir .gobble && echo "dummy-token" > token.txt
+  - mkdir ~/.gobble && echo "dummy-token" > ~/.gobble/token.txt
 
 install:
   - pip install --upgrade -r requirements.dev.txt
