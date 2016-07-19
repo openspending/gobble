@@ -10,6 +10,9 @@ python:
   - 3.4
   - 3.5
 
+before_install:
+  - cd && mkdir .gobble && echo "dummy-token" > token.txt
+
 install:
   - pip install --upgrade -r requirements.dev.txt
 
