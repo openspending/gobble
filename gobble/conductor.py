@@ -46,12 +46,14 @@ def build_request_caller(verb, *path):
 
     return send_request
 
+# I would like to expose the function with an ordinary class
+# but it fails in python2. This is a quick dirty hack.
+API = Munch()
 
-class API(object):
-    authenticate_user = build_request_caller('GET', 'user', 'check')
-    authorize_user = build_request_caller('GET', 'user', 'authorize')
-    oauth_callback = build_request_caller('GET', 'oauth', 'callback')
-    update_user = build_request_caller('POST', 'user', 'update')
-    search_users = build_request_caller('GET', 'search', 'user')
-    search_packages = build_request_caller('GET', 'search', 'package')
-    request_upload = build_request_caller('POST', 'datastore/')
+API.authenticate_user = build_request_caller('GET', 'user', 'check')
+API.authorize_user = build_request_caller('GET', 'user', 'authorize')
+API.oauth_callback = build_request_caller('GET', 'oauth', 'callback')
+API.update_user = build_request_caller('POST', 'user', 'update')
+API.search_users = build_request_caller('GET', 'search', 'user')
+API.search_packages = build_request_caller('GET', 'search', 'package')
+API.request_upload = build_request_caller('POST', 'datastore/')
