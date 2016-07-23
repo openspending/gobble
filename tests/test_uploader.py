@@ -5,7 +5,6 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from future import standard_library
-from requests_mock import Adapter
 
 standard_library.install_aliases()
 
@@ -18,6 +17,7 @@ import responses
 from gobble.user import User
 from gobble.uploader import Uploader
 from gobble.configuration import config
+from gobble.logger import log
 # noinspection PyUnresolvedReferences
 from tests.fixtures import (get_mock_request,
                             ROOT_DIR,
@@ -25,20 +25,22 @@ from tests.fixtures import (get_mock_request,
                             UPLOADER_PAYLOAD)
 
 REAL_HTTP = not config.MOCK_REQUESTS
+log.debug('Mock all tests requests: %s', config.MOCK_REQUESTS)
 
 
-def test_sending_payload_info_returns_mock_upload_url2():
-    with Mocker(real_http=REAL_HTTP) as mock:
-        endpoints = ('authenticate', 'get-permissions', 'request-upload')
-        for endpoints in endpoints:
-            method, url, status, json = get_mock_request(endpoints)
-            getattr(mock, method.lower())(url, text=dumps(json))
+@Mocker(real_http=REAL_HTTP, kw='mock')
+def test_sending_payload_info_returns_mock_upload_url2(mock=None):
+    endpoints = ('authenticate', 'get-permissions', 'request-upload')
 
-        user = User()
-        package = DataPackage(PACKAGE_FILE)
-        uploader = Uploader(user, package)
+    for endpoints in endpoints:
+        method, url, status, json = get_mock_request(endpoints)
+        getattr(mock, method.lower())(url, text=dumps(json))
 
-        assert uploader.request_upload().status_code == 200
+    user = User()
+    package = DataPackage(PACKAGE_FILE)
+    uploader = Uploader(user, package)
+
+    assert uploader.request_upload().status_code == 200
 
 
 @responses.activate
