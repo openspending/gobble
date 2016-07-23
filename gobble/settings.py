@@ -4,6 +4,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
+
+from os import getenv
+
 from future import standard_library
 
 standard_library.install_aliases()
@@ -27,6 +30,7 @@ class Production(object):
     DATAFILE_HASHING_BLOCK_SIZE = 65536
     CONFIG_FILE = join(_user_dir, '.gobble', 'settings.json')
     LOG_FILE = join(_user_dir, '.gobble', 'user.log')
+    MOCK_REQUESTS = False
 
 
 class Development(Production):
@@ -35,3 +39,8 @@ class Development(Production):
     LOG_FILE = None
     OS_URL = 'http://dev.openspending.org'
     CONFIG_FILE = join(_user_dir, '.gobble.dev', 'config.json')
+    MOCK_REQUESTS = getenv('GOBBLE_MOCK_MODE', False)
+
+
+class Testing(Production):
+    MOCK_REQUESTS = True
