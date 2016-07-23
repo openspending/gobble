@@ -39,7 +39,7 @@ class Development(Production):
     LOG_FILE = None
     OS_URL = 'http://dev.openspending.org'
     CONFIG_FILE = join(_user_dir, '.gobble.dev', 'config.json')
-    MOCK_REQUESTS = getenv('GOBBLE_MOCK_MODE', False)
+    MOCK_REQUESTS = bool(getenv('GOBBLE_MOCK_REQUESTS', False))
 
 
 class Testing(Production):
