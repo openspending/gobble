@@ -35,7 +35,7 @@ def test_sending_datapackage_info_returns_dict(mock_endpoints):
     user = User()
     package = DataPackage(PACKAGE_FILE)
     uploader = Uploader(user, package)
-    json = uploader.request_upload()
+    json = uploader.prepare()
     assert isinstance(json, dict)
 
 # @responses.activate

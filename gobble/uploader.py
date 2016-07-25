@@ -5,6 +5,8 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import absolute_import
 from future import standard_library
+from requests_futures.sessions import FuturesSession
+
 standard_library.install_aliases()
 
 from builtins import str
@@ -43,6 +45,7 @@ class Uploader(object):
         self.package = package
         self.user = user
         self.in_shell = user.in_shell
+        self.session = FuturesSession()
 
     @property
     def payload(self):
@@ -51,11 +54,11 @@ class Uploader(object):
                 'owner': self.user.profile['idhash'],
                 'name': self.package.descriptor['name']
             },
-            'filedata': dict(self._resources)
+            'filedata': dict(self.resources)
         }
 
     @property
-    def _resources(self):
+    def resources(self):
         for resource in self.package.descriptor['resources']:
             filepath = join(self.package.base_path, resource['path'])
             md5_hash, length = _get_datafile_stats(filepath)
@@ -70,10 +73,56 @@ class Uploader(object):
             yield resource['path'], resource_info
 
     @to_console
-    def request_upload(self):
+    def prepare(self):
         token = self.user.permissions['os.datastore']['token']
         response = API.request_upload(json=self.payload, jwt=token)
         return handle(response)
+
+    # def upload(self, payload):
+    #     """Asyncronously upload a datapackage"""
+    #
+    #     responses = []
+    #     futures = []
+    #     files = []
+    #
+    #     # Start uploading
+    #     for path, metadata in payload['filedata'].items():
+    #         fullpath = os.path.join(self.path, path)
+    #         headers = {
+    #             'Content-Length': metadata['length'],
+    #             'Content-MD5': metadata['md5'],
+    #         }
+    #         file = io.open(fullpath, mode='rb')
+    #         files.append(file)
+    #         future = self.session.put(
+    #             metadata['upload_url'],
+    #             data=file,
+    #             headers=headers,
+    #             params=metadata['upload_query'],
+    #             background_callback=self.__notify)
+    #         futures.append(future)
+    #
+    #     # Wait uploading
+    #     for future in futures:
+    #         exception = future.exception()
+    #         if exception:
+    #             raise exception
+    #         response = future.result()
+    #         responses.append(response)
+    #
+    #     # Raise if errors
+    #     for response in responses:
+    #         if response.status_code != 200:
+    #             url = self.__clean_url(response.url)
+    #             message = (
+    #                 'Something went wrong with "%s" file.\n\n'
+    #                 'Here is response we\'ve received:\n\n%s' %
+    #                 (url, response.text))
+    #             raise RuntimeError(message)
+    #
+    #     # Close files
+    #     for file in files:
+    #         file.close()
 
 
 if __name__ == '__main__':
@@ -84,4 +133,4 @@ if __name__ == '__main__':
     user_ = User(in_shell=True)
     package_ = DataPackage(PACKAGE_FILE)
     uploader = Uploader(user_, package_)
-    uploader.request_upload()
+    uploader.prepare()

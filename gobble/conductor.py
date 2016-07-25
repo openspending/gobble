@@ -8,6 +8,7 @@ from builtins import str
 from future import standard_library
 standard_library.install_aliases()
 
+from requests_futures.sessions import FuturesSession
 from collections import OrderedDict
 from json import dumps
 from munch import Munch
@@ -29,11 +30,13 @@ from gobble.logger import log
 
 
 # One session for all API calls
-session = Session()
+_futures_session = FuturesSession()
+_session = Session()
 
 
-def build_request_caller(verb, *path):
+def build_request(verb, *path, concurrent=False):
     """Return a function that calls an API endpoint"""
+    session = _futures_session if concurrent else _session
 
     def send_request(headers=None, json=None, **query):
         """Send a request to an API endpoint"""
@@ -63,13 +66,14 @@ def build_request_caller(verb, *path):
 # but it fails in python2. The Munch class is just a dirty hack.
 API = Munch()
 
-API.authenticate_user = build_request_caller('GET', 'user', 'check')
-API.authorize_user = build_request_caller('GET', 'user', 'authorize')
-API.oauth_callback = build_request_caller('GET', 'oauth', 'callback')
-API.update_user = build_request_caller('POST', 'user', 'update')
-API.search_users = build_request_caller('GET', 'search', 'user')
-API.search_packages = build_request_caller('GET', 'search', 'package')
-API.request_upload = build_request_caller('POST', 'datastore/')
+API.authenticate_user = build_request('GET', 'user', 'check')
+API.authorize_user = build_request('GET', 'user', 'authorize')
+API.oauth_callback = build_request('GET', 'oauth', 'callback')
+API.update_user = build_request('POST', 'user', 'update')
+API.search_users = build_request('GET', 'search', 'user')
+API.search_packages = build_request('GET', 'search', 'package')
+API.request_upload = build_request('POST', 'datastore/')
+API.upload = build_request('POST', 'datastore', 'upload', concurrent=True)
 
 
 def handle(response):
