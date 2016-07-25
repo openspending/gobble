@@ -17,9 +17,9 @@ from gobble.conductor import API, handle
 from gobble.configuration import to_console, config
 
 
-def _get_datafile_stats(filepath,
-                        block_size=config.DATAFILE_HASHING_BLOCK_SIZE):
+def _get_datafile_stats(filepath):
     """Get stats on a file via iteration over its contents"""
+    block_size = config.DATAFILE_HASHING_BLOCK_SIZE
 
     hasher = md5()
     length = 0
