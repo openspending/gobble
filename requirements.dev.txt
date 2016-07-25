@@ -7,3 +7,4 @@ pytest-cov
 coverage
 coveralls
 responses
+requests_mock
