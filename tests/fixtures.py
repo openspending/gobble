@@ -1,14 +1,18 @@
 """Fixtures for test modules"""
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 
 from json import loads, dumps
 from os.path import abspath, join, dirname
 from sys import modules
-from os import listdir
-
 from future.backports.urllib.parse import urljoin
 from pytest import fixture
 from shutil import rmtree
-from responses import RequestsMock
+import io
 
 from gobble.configuration import Config, config
 from gobble.logger import log
@@ -38,7 +42,7 @@ def dummy_config(request):
 
 def get_mock_request(slug):
     """Return """
-    with open(RESPONSES_FILE) as json:
+    with io.open(RESPONSES_FILE) as json:
         specs = loads(json.read())
 
     verb = specs[slug]['method']

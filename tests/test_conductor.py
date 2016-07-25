@@ -5,15 +5,17 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 from future import standard_library
-
 standard_library.install_aliases()
 
 from responses import RequestsMock
 from pytest import mark, raises
+try:
+    from unittest.mock import Mock
+except ImportError:
+    from mock import Mock
 
 from gobble.configuration import config
 from gobble.conductor import API, build_request_caller
-
 
 GET = RequestsMock.GET
 POST = RequestsMock.POST

@@ -13,7 +13,7 @@ standard_library.install_aliases()
 from json import loads, dumps
 from os import getenv, makedirs
 from os.path import isfile, dirname
-from io import open
+import io
 
 from gobble import settings as config_module
 
@@ -35,12 +35,12 @@ class Config(dict):
     def load(self):
         if not isfile(self.CONFIG_FILE):
             return {}
-        with open(self.CONFIG_FILE) as json:
+        with io.open(self.CONFIG_FILE) as json:
             return loads(json.read())
 
     def save(self):
         makedirs(dirname(self.CONFIG_FILE))
-        with open(self.CONFIG_FILE, 'w+', encoding='utf-8') as file:
+        with io.open(self.CONFIG_FILE, 'w+', encoding='utf-8') as file:
             # What a freaking mess dude... I hate python 2 with a passion
             file.write(unicode(dumps(self, ensure_ascii=False, indent=2)))
         return self
