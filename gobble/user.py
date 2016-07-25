@@ -17,10 +17,9 @@ from os import mkdir
 from threading import Thread
 import io
 
-from gobble.configuration import config
+from gobble.configuration import config, to_console
 from gobble.logger import log
-from gobble.conductor import API
-
+from gobble.conductor import API, handle
 
 OPENSPENDING_SERVICES = ['os.datastore']
 
@@ -43,18 +42,18 @@ def _listen_for_token():
 
 
 class User(object):
-    def __init__(self):
+    def __init__(self, in_shell=False):
         self._conductor = API
         self.is_authenticated = False
         self.profile = defaultdict(lambda: None)
-        self.permissions = {}
+        self.in_shell = in_shell
 
         if not self.token:
             self._request_new_token()
         else:
             self._authenticate()
 
-        self._get_permissions()
+        self.permissions = dict(self._get_permissions())
 
     def update(self, **field):
         response = self._conductor.update_user(jwt=self.token, **field)
@@ -77,14 +76,13 @@ class User(object):
                 log.debug('Token: %s', token_)
                 return token_
 
+    @to_console
     def _get_permissions(self):
         for service in OPENSPENDING_SERVICES:
-            self.permissions[service] = {}
             query = dict(jwt=self.token, service=service)
             response = self._conductor.authorize_user(**query)
-            log.debug('Response: %s', response.json())
-            self.permissions.update({service: response.json()})
-        self._cache('permissions')
+            json = handle(response)
+            yield service, json
 
     def _authenticate(self):
         response = self._conductor.authenticate_user(jwt=self.token)
