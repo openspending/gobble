@@ -9,10 +9,8 @@ from pytest import fixture
 
 standard_library.install_aliases()
 
-
 from json import dumps
 from datapackage import DataPackage
-from pytest import mark
 
 from gobble.user import User
 from gobble.uploader import Uploader
@@ -33,8 +31,7 @@ def mock_endpoints(mock_requests):
 
 
 # noinspection PyUnusedLocal,PyShadowingNames
-@mark.xfail(reason='not implemented yet')
-def test_sending_datapackage_info_returns_json(mock_endpoints):
+def test_sending_datapackage_info_returns_dict(mock_endpoints):
     user = User()
     package = DataPackage(PACKAGE_FILE)
     uploader = Uploader(user, package)

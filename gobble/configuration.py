@@ -68,4 +68,3 @@ def to_console(method):
             print(json)
         return result
     return wrapper
-

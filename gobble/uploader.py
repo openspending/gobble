@@ -51,11 +51,11 @@ class Uploader(object):
                 'owner': self.user.profile['idhash'],
                 'name': self.package.descriptor['name']
             },
-            'filedata': dict(self._datafile_info)
+            'filedata': dict(self._resources)
         }
 
     @property
-    def _datafile_info(self):
+    def _resources(self):
         for resource in self.package.descriptor['resources']:
             filepath = join(self.package.base_path, resource['path'])
             md5_hash, length = _get_datafile_stats(filepath)
