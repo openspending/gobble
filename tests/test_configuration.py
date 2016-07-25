@@ -10,7 +10,7 @@ standard_library.install_aliases()
 
 from json import loads
 from os.path import isfile
-from io import open
+import io
 
 # noinspection PyUnresolvedReferences
 from tests.fixtures import dummy_config, CONFIG_FILE
@@ -48,6 +48,6 @@ def test_config_file_has_been_created(dummy_config):
 
 # noinspection PyShadowingNames
 def test_loading_config_file_returns_original_data(dummy_config):
-    with open(dummy_config.CONFIG_FILE) as file:
+    with io.open(dummy_config.CONFIG_FILE) as file:
         config_dict = loads(file.read())
         assert config_dict == {'CONFIG_FILE': CONFIG_FILE}

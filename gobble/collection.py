@@ -5,19 +5,16 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import absolute_import
 from future import standard_library
-
 standard_library.install_aliases()
 
 from datapackage.exceptions import DataPackageException
 from datapackage import DataPackage
-from logging import getLogger
 from os.path import join
-from fnmatch import filter
 from os import walk
+import fnmatch
 
 from gobble.config import DATAPACKAGE_DETECTION_THRESHOLD as THRESHOLD
-
-log = getLogger(__name__)
+from gobble.logger import log
 
 
 class Collection(object):
@@ -40,7 +37,7 @@ class Collection(object):
 
     def _collect(self):
         for root, folders, files in walk(self.root):
-            for filename in filter(files, '*.json'):
+            for filename in fnmatch.filter(files, '*.json'):
                 filepath = join(root, filename)
                 package = self.ingest(filepath)
                 if self.is_match(package):

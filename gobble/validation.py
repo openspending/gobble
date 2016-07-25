@@ -4,10 +4,12 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+from builtins import str
+from builtins import dict
 from future import standard_library
-
 standard_library.install_aliases()
 
+import io
 from json import dumps
 from datetime import datetime
 from collections import OrderedDict
@@ -74,8 +76,8 @@ class Validator(object):
     def save(self, filepath):
         if not filepath.endswith('.json'):
             raise ValueError('Reports are JSON files')
-        with open(filepath, 'w+') as file:
-            file.write(dumps(self.report))
+        with io.open(filepath, 'w+', encoding='utf-8') as cache:
+            cache.write(dumps(self.report, ensure_ascii=False, indent=2))
 
     @property
     def _package_info(self):
