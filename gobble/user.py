@@ -17,8 +17,8 @@ from os import mkdir
 from threading import Thread
 import io
 
-from gobble.configuration import config, to_console
-from gobble.logger import log
+from gobble.configuration import config
+from gobble.logger import log, sdumps
 from gobble.conductor import API, handle
 
 OPENSPENDING_SERVICES = ['os.datastore']
@@ -42,11 +42,10 @@ def _listen_for_token():
 
 
 class User(object):
-    def __init__(self, in_shell=False):
+    def __init__(self):
         self._conductor = API
         self.is_authenticated = False
         self.profile = defaultdict(lambda: None)
-        self.in_shell = in_shell
 
         if not self.token:
             self._request_new_token()
@@ -76,7 +75,6 @@ class User(object):
                 log.debug('Token: %s', token_)
                 return token_
 
-    @to_console
     def _get_permissions(self):
         for service in OPENSPENDING_SERVICES:
             query = dict(jwt=self.token, service=service)
@@ -102,7 +100,7 @@ class User(object):
             log.warn('Token has expired: %s', self.token)
             self._request_new_token()
 
-        log.debug('Response: %s', response.json())
+        log.debug('Response: %s', sdumps(response.json()))
         return user
 
     def _request_new_token(self):
@@ -118,9 +116,7 @@ class User(object):
     def _cache(self, attribute):
         filepath = join(config.CONFIG_DIR, attribute + '.json')
         with io.open(filepath, 'w+', encoding='utf-8') as cache:
-            cache.write(dumps(getattr(self, attribute),
-                              ensure_ascii=False,
-                              indent=2))
+            cache.write(sdumps(getattr(self, attribute)))
 
     def _cache_token(self):
         with io.open(config.TOKEN_FILE, 'w+') as text:
