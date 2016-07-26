@@ -8,9 +8,7 @@ from builtins import str
 from future import standard_library
 standard_library.install_aliases()
 
-from requests_futures.sessions import FuturesSession
 from collections import OrderedDict
-from json import dumps
 from munch import Munch
 from requests import HTTPError
 from requests import Session
@@ -26,23 +24,30 @@ except ImportError:
     JSONDecodeError = ValueError
 
 from gobble.configuration import config
-from gobble.logger import log
+from gobble.logger import log, sdumps
 
 
 # One session for all API calls
-_futures_session = FuturesSession()
 _session = Session()
 
 
-def build_request(verb, *path, concurrent=False):
+def build_request(verb, *path):
     """Return a function that calls an API endpoint"""
-    session = _futures_session if concurrent else _session
 
-    def send_request(headers=None, json=None, **query):
+    def send_request(headers=None,
+                     json=None,
+                     data=None,
+                     params=None,
+                     **query):
         """Send a request to an API endpoint"""
 
+        if params:
+            assert not query
+        if query:
+            assert not params
+
         method = verb.lower()
-        caller = getattr(session, method)
+        caller = getattr(_session, method)
         endpoint = urljoin(config.OS_URL, '/'.join(path))
         parts = urlsplit(endpoint)
 
@@ -52,12 +57,19 @@ def build_request(verb, *path, concurrent=False):
 
         url = urlunsplit(updated_parts)
 
-        log.debug('Request endpoint: %s', endpoint)
-        log.debug('Request query: %s', safe_query)
-        log.debug('Request payload: %s', json)
-        log.debug('Request headers: %s', headers)
+        request = {
+            'endpoint': endpoint,
+            'query': dict(parameters),
+            'payload': json,
+            'headers': headers,
+        }
+        log.debug('Sending request: %s', sdumps(request))
 
-        return caller(url, json=json, headers=headers)
+        return caller(url,
+                      json=json,
+                      headers=headers,
+                      data=data,
+                      params=params)
 
     return send_request
 
@@ -73,7 +85,7 @@ API.update_user = build_request('POST', 'user', 'update')
 API.search_users = build_request('GET', 'search', 'user')
 API.search_packages = build_request('GET', 'search', 'package')
 API.request_upload = build_request('POST', 'datastore/')
-API.upload = build_request('POST', 'datastore', 'upload', concurrent=True)
+API.upload = build_request('POST', 'datastore', 'upload')
 
 
 def handle(response):
@@ -87,15 +99,17 @@ def handle(response):
         response.raise_for_status()
     except HTTPError as error:
         log.error(error)
-        log.error(to_json(response))
+        log.error('Failed request: %s', to_json(response))
         raise error
     else:
-        log.debug(response)
-        log.debug(to_json(response))
-        return response.json()
+        log.debug('Received response %s', to_json(response))
+        try:
+            return response.json()
+        except JSONDecodeError:
+            return {}
 
 
-def to_json(response, indent=4):
+def to_json(response):
     """Return a JSON representation of a response object"""
 
     url_parts = urlparse(response.url)
@@ -118,4 +132,4 @@ def to_json(response, indent=4):
     except JSONDecodeError:
         properties['json'] = None
 
-    return dumps(properties, ensure_ascii=False, indent=indent)
+    return sdumps(properties)
