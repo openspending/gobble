@@ -15,7 +15,7 @@ env:
         - GOBBLE_MODE=Testing
 
 before_install:
-  - mkdir ~/.gobble && echo "dummy-token" > ~/.gobble/token.txt
+  - mkdir ~/.gobble && echo '{"token":"dummy-token"}' > ~/.gobble/token.json
 
 install:
   - pip install --upgrade -r requirements.dev.txt

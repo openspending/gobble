@@ -54,4 +54,6 @@ class Development(Production):
 
 
 class Testing(Production):
+    CONSOLE_LOG_LEVEL = DEBUG
+    FILE_LOG_LEVEL = None
     MOCK_REQUESTS = True
