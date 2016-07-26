@@ -15,7 +15,7 @@ except ImportError:
     from mock import Mock
 
 from gobble.configuration import config
-from gobble.conductor import API, build_request_caller
+from gobble.conductor import API, build_request
 
 GET = RequestsMock.GET
 POST = RequestsMock.POST
@@ -41,12 +41,12 @@ def test_api_calls_hit_correct_endpoints(call, endpoint, verb):
 
 def test_passing_endpoint_item_not_string_raises_type_error():
     with raises(TypeError):
-        build_request_caller('GET', 1000)()
+        build_request('GET', 1000)()
 
 
 def test_call_endpoint_with_query_parameters():
     with RequestsMock() as mock:
         url = config.OS_URL + '/baz?foo=bar&spam=eggs'
         mock.add(GET, url, status=200, match_querystring=True)
-        response = build_request_caller(GET, 'baz')(foo='bar', spam='eggs')
+        response = build_request(GET, 'baz')(foo='bar', spam='eggs')
         assert response.status_code == 200

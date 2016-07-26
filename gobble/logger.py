@@ -3,6 +3,9 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+
+from json import dumps
+
 from future import standard_library
 standard_library.install_aliases()
 
@@ -14,6 +17,11 @@ from logging import (getLogger,
                      Filter)
 
 from gobble.configuration import config
+
+
+def sdumps(dict_):
+    """A thin py2/py3 compatibilty wrapper for JSON dumps"""
+    return dumps(dict_, ensure_ascii=False, indent=2)
 
 
 class MultilineFilter(Filter):

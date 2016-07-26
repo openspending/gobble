@@ -17,10 +17,12 @@ _home = abspath(join(expanduser('~')))
 
 
 class Production(object):
-    CONSOLE_LOG_LEVEL = INFO
+    JSON_INDENT = 4
+    EXPANDED_LOG_STYLE = True
+    CONSOLE_LOG_LEVEL = DEBUG
     FILE_LOG_LEVEL = DEBUG
     FILE_LOG_FORMAT = '[%(asctime)s] [%(module)s] [%(levelname)s] %(message)s'
-    CONSOLE_LOG_FORMAT = '[%(name)s] [%(module)s] [%(levelname)s] %(message)s'
+    CONSOLE_LOG_FORMAT = '[%(name)s] [%(levelname)s] %(message)s'
     OS_URL = 'http://next.openspending.org'
     DATAPACKAGE_DETECTION_THRESHOLD = 1
     VALIDATION_FEEDBACK_OPTIONS = ['message']
@@ -42,7 +44,16 @@ class Development(Production):
     CONFIG_FILE = join(_home, '.gobble.dev', 'config.json')
     TOKEN_FILE = join(_home, '.gobble.dev', 'token.json')
     MOCK_REQUESTS = bool(getenv('GOBBLE_MOCK_REQUESTS', False))
+    CONSOLE_LOG_FORMAT = ('[%(name)s] '
+                          '[%(asctime)s] '
+                          '[%(module)s] '
+                          '[%(funcName)s] '
+                          '[%(lineno)d] '
+                          '[%(levelname)s] '
+                          '%(message)s')
 
 
 class Testing(Production):
+    CONSOLE_LOG_LEVEL = DEBUG
+    FILE_LOG_LEVEL = None
     MOCK_REQUESTS = True

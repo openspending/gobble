@@ -65,7 +65,7 @@ def find(kind, **query):
 def upload(packages):
     """Upload fiscal data into Open-Spending"""
     for package in packages:
-        return Uploader(package).push()
+        return Uploader(package)._upload_batch()
 
 
 @command
