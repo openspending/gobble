@@ -9,120 +9,197 @@ from requests_futures.sessions import FuturesSession
 
 standard_library.install_aliases()
 
-from builtins import str
+from os.path import join, getsize
 from base64 import b64encode
 from hashlib import md5
-from os.path import join
 import io
 
 from gobble.conductor import API, handle
-from gobble.configuration import to_console, config
+from gobble.configuration import config
+from gobble.logger import log, sdumps
 
 
-def _get_datafile_stats(filepath):
-    """Get stats on a file via iteration over its contents"""
+class Resource(object):
     block_size = config.DATAFILE_HASHING_BLOCK_SIZE
 
-    hasher = md5()
-    length = 0
-
-    with io.open(filepath, mode='rb') as stream:
-        chunk = stream.read(block_size)
-
-        while len(chunk) > 0:
-            hasher.update(chunk)
-            length += len(chunk)
-            chunk = stream.read(block_size)
-
-    md5_binary = hasher.digest()
-    md5_string = b64encode(md5_binary).decode('utf-8')
-
-    return md5_string, str(length)
-
-
-class Uploader(object):
-    def __init__(self, user, package):
+    def __init__(self, name, file, package):
         self.package = package
-        self.user = user
-        self.in_shell = user.in_shell
-        self.session = FuturesSession()
+        self.name = name
+        self.file = file
+        self.upload_url = None
+        self.upload_query = None
+        self._stream = None
+        self._size = getsize(self.filepath)
+        self._md5_hash = self._compute_hash()
+
+        template = 'Created a new resource: %s'
+        log.debug(template, sdumps(self.info))
+
+    def _compute_hash(self):
+        hasher = md5()
+        with self as stream:
+            chunk = stream.read(self.block_size)
+            while len(chunk) > 0:
+                hasher.update(chunk)
+                chunk = stream.read(self.block_size)
+        md5_binary = hasher.digest()
+        md5_bytes = b64encode(md5_binary)
+        md5_unicode = md5_bytes.decode('utf-8')
+        return md5_unicode
 
     @property
-    def payload(self):
+    def filepath(self):
+        return join(self.package.base_path, self.file)
+
+    @property
+    def headers(self):
         return {
-            'metadata': {
-                'owner': self.user.profile['idhash'],
-                'name': self.package.descriptor['name']
-            },
-            'filedata': dict(self.resources)
+            'Content-Length': len(self),
+            'Content-MD5': self._md5_hash
         }
 
     @property
-    def resources(self):
-        for resource in self.package.descriptor['resources']:
-            filepath = join(self.package.base_path, resource['path'])
-            md5_hash, length = _get_datafile_stats(filepath)
+    def info(self):
+        return {
+            'package': self.package.descriptor['name'],
+            'length': len(self),
+            'md5': self._md5_hash,
+            'type': "text/csv",
+            'name': self.name
+        }
 
-            resource_info = {
-                'length': length,
-                'md5': md5_hash,
-                'type': "text/csv",
-                'name': resource['name']
-            }
+    def __len__(self):
+        return self._size
 
-            yield resource['path'], resource_info
+    def __enter__(self):
+        self._stream = io.open(self.filepath, mode='rb')
+        return self._stream
 
-    @to_console
+    # noinspection PyUnusedLocal
+    def __exit__(self, etype, value, trace):
+        self._stream.close()
+        return True
+
+    def __str__(self):
+        template = '{package} {name} ({length} bytes)'
+        return template.format(**self.info)
+
+    def __repr__(self):
+        template = '<Resource {package}: {name}>'
+        return template.format(**self.info)
+
+
+class Batch(object):
+    def __init__(self, user, package):
+        self.name = package.descriptor['name']
+        self.user = user
+        self.package = package
+        self.resources = {}
+        self.payload = None
+        self.response = None
+
     def prepare(self):
-        token = self.user.permissions['os.datastore']['token']
-        response = API.request_upload(json=self.payload, jwt=token)
-        return handle(response)
+        self._scan_files()
+        self._build_payload()
+        self._request_urls()
+        self._register_urls()
 
-    # def upload(self, payload):
-    #     """Asyncronously upload a datapackage"""
-    #
-    #     responses = []
-    #     futures = []
-    #     files = []
-    #
-    #     # Start uploading
-    #     for path, metadata in payload['filedata'].items():
-    #         fullpath = os.path.join(self.path, path)
-    #         headers = {
-    #             'Content-Length': metadata['length'],
-    #             'Content-MD5': metadata['md5'],
-    #         }
-    #         file = io.open(fullpath, mode='rb')
-    #         files.append(file)
-    #         future = self.session.put(
-    #             metadata['upload_url'],
-    #             data=file,
-    #             headers=headers,
-    #             params=metadata['upload_query'],
-    #             background_callback=self.__notify)
-    #         futures.append(future)
-    #
-    #     # Wait uploading
-    #     for future in futures:
-    #         exception = future.exception()
-    #         if exception:
-    #             raise exception
-    #         response = future.result()
-    #         responses.append(response)
-    #
-    #     # Raise if errors
-    #     for response in responses:
-    #         if response.status_code != 200:
-    #             url = self.__clean_url(response.url)
-    #             message = (
-    #                 'Something went wrong with "%s" file.\n\n'
-    #                 'Here is response we\'ve received:\n\n%s' %
-    #                 (url, response.text))
-    #             raise RuntimeError(message)
-    #
-    #     # Close files
-    #     for file in files:
-    #         file.close()
+        message = '%s batch is ready for upload: %s'
+        log.debug(message, self, list(self.resources.keys()))
+
+        return self
+
+    def __iter__(self):
+        for name, resource in self.resources.items():
+            yield name, resource
+
+    def _scan_files(self):
+        for item in self.package.descriptor['resources']:
+            resource = Resource(item['name'], item['path'], self.package)
+            self.resources.update({resource.name: resource})
+            log.debug('Ingested %s', resource)
+
+    def _build_payload(self):
+        self.payload = {
+            'filedata': dict(self._datafiles),
+            'metadata': {
+                'owner': self.user.profile['idhash'],
+                'name': str(self)
+            }
+        }
+
+    def _request_urls(self):
+        log.debug('Registering %s: %s', self, sdumps(self.payload))
+        permission_token = self.user.permissions['os.datastore']['token']
+        query = {'json': self.payload, 'jwt': permission_token}
+        self.response = handle(API.request_upload(**query))
+
+    def _register_urls(self):
+        for resource in self.response['filedata'].values():
+            query = resource['upload_query'].items()
+            params = {k: v[0] for k, v in query}
+            name = resource['name']
+            self.resources[name].query = params
+            self.resources[name].url = resource['upload_url']
+
+    @property
+    def _datafiles(self):
+        for _, resource in self:
+            yield resource.file, resource.info
+
+    def __len__(self):
+        return len(self.resources)
+
+    def __repr__(self):
+        info = {'name': str(self), 'length': len(self)}
+        template = 'Batch [{length} files]: {name}'
+        return template.format(**info)
+
+    def __str__(self):
+        return self.package.descriptor['name']
+
+
+class Uploader(object):
+    def __init__(self, batch):
+        self.session = FuturesSession()
+        self.batch = batch
+        self.payload = None
+        self.futures = []
+        self.responses = []
+        self.streams = []
+        self.exceptions = None
+
+    def push(self):
+        for name, resource in self.batch:
+            log.debug('Pushing %s to %s', name, resource.url)
+            stream = io.open(resource.filepath, mode='rb')
+            future = self.session.put(
+                resource.url,
+                headers=resource.headers,
+                data=stream,
+                params=resource.query,
+                background_callback=self._notify
+            )
+            self.streams.append(stream)
+            self.futures.append(future)
+
+    def pull(self):
+        for future in self.futures:
+            exception = future.exception()
+            if exception:
+                raise exception
+            response = future.result()
+            self.responses.append(response)
+
+    # noinspection PyUnusedLocal
+    @staticmethod
+    def _notify(session, response):
+        handle(response)
+
+    def close(self):
+        for stream in self.streams:
+            stream.close()
+        return True
 
 
 if __name__ == '__main__':
@@ -130,7 +207,10 @@ if __name__ == '__main__':
     from datapackage import DataPackage
     from tests.fixtures import PACKAGE_FILE
 
-    user_ = User(in_shell=True)
+    user_ = User()
     package_ = DataPackage(PACKAGE_FILE)
-    uploader = Uploader(user_, package_)
-    uploader.prepare()
+    batch_ = Batch(user_, package_).prepare()
+    uploader = Uploader(batch_)
+    uploader.push()
+    uploader.pull()
+    uploader.close()
