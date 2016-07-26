@@ -53,18 +53,3 @@ _default_dict = {key: getattr(_default_class, key)
                  if key.isupper()}
 
 config = Config(_default_dict)
-
-
-# TODO: find a home the console output decorator
-
-def to_console(method):
-    def wrapper(self, *args, **kwwargs):
-        result = method(self, *args, **kwwargs)
-        result = dict(result)
-        if self.in_shell:
-            json = dumps(result,
-                         ensure_ascii=False,
-                         indent=4)
-            print(json)
-        return result
-    return wrapper
