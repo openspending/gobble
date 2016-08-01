@@ -60,12 +60,14 @@ class User(object):
         response = authenticate_user(params=query)
         authentication = handle(response)
         self.name = authentication['profile']['name']
+
         if not authentication['authenticated']:
             message = 'Token has expired: request a new one'
             log.error(message)
             raise TokenExpired(message)
 
         log.info('Hello %s! You are logged in Open-Spending', self)
+
         return authentication
 
     def _get_permissions(self):

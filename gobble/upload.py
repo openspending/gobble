@@ -1,24 +1,27 @@
 """ This modules uploads data-packages to the Open-Spending datastore"""
 
-from __future__ import division
-from __future__ import unicode_literals
-from __future__ import print_function
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 
 import io
+from base64 import b64encode
+from hashlib import md5
+from os.path import getsize, join
+from sys import stdout
+from time import sleep
 
 from datapackage import DataPackage
-from datapackage.exceptions import DataPackageException
+from datapackage.exceptions import DataPackageException, ValidationError
 from future import standard_library
 from petl import fromcsv
 from pip.utils import cached_property
+from requests import HTTPError
 from requests_futures.sessions import FuturesSession
-from os.path import getsize, join
-from base64 import b64encode
-from hashlib import md5
 
-from gobble.api import handle, upload_package, request_upload
-from gobble.configuration import settings
+from gobble.api import (handle, upload_package, request_upload,
+                        toggle_publish, upload_status)
 from gobble.logger import log
 from gobble.user import User
 
@@ -26,26 +29,91 @@ standard_library.install_aliases()
 
 
 OS_DATA_FORMATS = ['csv']
+user = User()
 
 
-def report_validation_errors(package):
-    """Iterate over validation errors a datapackage."""
+def upload_datapackage(filepath, publish=True):
+    """Upload a datapackage to the Open-Spending datastore.
 
-    name = package.descriptor['name']
-    messages = []
+    :param publish: toggle the datapackage to "published" after upload
 
-    log.debug('{:*^100}'.format(' Validating %s ' % name))
+    :param filepath: can be `dict`, `str` or file-like object (see the docs
+           for the `datapackage.DataPackage` class)
+    """
+    package = DataPackage(filepath)
+    batch = Batch(package)
 
-    for error in package.iter_errors():
-        messages.append(error.message)
-        log.warn(error.message)
+    batch.collect_datafiles()
 
-    log.debug('{:*^100}'.format(' End of validation '))
+    for target in batch.request_s3_targets():
+        promise = batch.push_to_s3(*target)
+        batch.handle_promise(*promise)
 
-    return messages
+    batch.insert_into_postgres()
+
+    while batch.in_progress:
+        sleep(10)
+
+    log.info('Congratuations, %s was uploaded successfully!', batch)
+
+    if publish:
+        toggle_public_access(batch.name)
 
 
-class DataFile(object):
+def toggle_public_access(package_id, public=True):
+    to_state = 'public' if public else 'private'
+
+    token = user.permissions['os.datastore']
+    query = dict(jwt=token, id=package_id, public=public)
+    answer = handle(toggle_publish(params=query))
+
+    if not answer['success']:
+        raise ValueError('Unable to toggle datapackage to %s', to_state)
+
+    log.info('%s is now %s', package_id, to_state)
+    return to_state
+
+
+def check_datapackage_schema(filepath, raise_error=True):
+    """Validate a datapackage.
+
+    :param filepath: can be `dict`, `str` or file-like object (see the docs
+           for the `datapackage.DataPackage` class)
+
+    :param raise_error: a 'bool' flag
+
+    :return By default, return true if the package is valid, else return
+            a list of error messages. If the `raise_error` flag is True,
+            however, raise a `datapackage.exceptions.ValidatioError`.
+
+    """
+    package = DataPackage(filepath)
+    name = package.descriptor.get('name') or 'datapackage'
+
+    try:
+        package.validate()
+        log.info('%s is a valid datapackage', name)
+        return True
+
+    except ValidationError:
+        messages = []
+
+        for error in package.iter_errors():
+            messages.append(error.message)
+
+        log.warn('%s has ERRORS!' % name)
+        for message in messages:
+            log.warn(message)
+        log.warn('end of errors')
+
+        if raise_error:
+            message = 'Cannot upload %s because it has %s errors'
+            raise ValidationError(message % (name, len(messages)))
+        else:
+            return messages
+
+
+class OSResource(object):
     """A wrapper around the datapackage Resource class.
 
     The class computes the md5 hash of the datafile and exposes the
@@ -53,6 +121,9 @@ class DataFile(object):
     a PETL Table object with handy diagnostic and viewing capabilities.
     """
     HASHING_BLOCK_SIZE = 65536
+
+    # TODO: subclass the `datapackage.Resource` class
+    # TODO: Run the resource through Goodtables ?
 
     def __init__(self, resource):
         self._descriptor = resource.descriptor
@@ -67,6 +138,7 @@ class DataFile(object):
         if self.format not in OS_DATA_FORMATS:
             msg = 'Gobble does yet support %s'
             raise NotImplemented(msg % self.format)
+
         if resource.remote_data_path:
             msg = 'Gooble does not support remote data files'
             raise NotImplemented(msg)
@@ -98,18 +170,6 @@ class DataFile(object):
         else:
             return self._descriptor['bytes']
 
-    @cached_property
-    def table(self):
-        """A PETL Table object (http://petl.readthedocs.io)
-
-        This object is especially useful in the python shell
-        and the notebook: it has nide tabular text and html
-        representation built in. Just type the name of the variable
-        to show the table. It also has nifty tools to inspect the data.
-        """
-        # PETL supports other common formarts if needed
-        return fromcsv(self.absolute_path)
-
     @property
     def header(self):
         """The request header for the upload"""
@@ -133,182 +193,165 @@ class DataFile(object):
 
     def __repr__(self):
         params = {'path': str(self), 'size': self.bytes}
-        return '<DataFile [{size} bytes]: {path}>'.format(**params)
+        return '<OSResource [{size} bytes]: {path}>'.format(**params)
+
+    @cached_property
+    def table(self):
+        """A PETL Table object (http://petl.readthedocs.io)
+
+        This object is especially useful in the python shell
+        and the notebook: it has nide tabular text and html
+        representation built in. Just type the name of the variable
+        to show the table. It also has nifty tools to inspect the data.
+        """
+        # PETL supports other common formarts if needed
+        return fromcsv(self.absolute_path)
 
 
 class Batch(object):
-    """This class prepares a data-package for upload"""
+    """This class uploads a datdpackage to the datastore."""
 
-    def __init__(self, package, user):
+    # TODO: subclass the `datapackage.DataPackage` class
+
+    def __init__(self, package):
         # Fail if the package is not valid
         package.validate()
 
-        self.package = package
-        self.user = user
+        self._package = package
+        self.package_url = None
+        self.datafiles = []
+        self._session = FuturesSession()
+        self.responses = []
 
         self.name = package.descriptor['name']
         self.token = user.permissions['os.datastore']['token']
-        self.owner_id = user.profile['idhash']
+        self.owner_id = user.authentication['profile']['idhash']
 
-        self.s3_targets = {}
-        self.resources = []
-
-        self.urls = []
-        self.queries = []
-        self.paths = []  # relative
-        self.infos = []
-        self.headers = []
-        self.names = []
-
-        self._collect_datafiles()
+        log.info('Starting uploading process for %s', self)
 
     @property
     def payload(self):
         return {
-            'filedata': {file: info for file, info
-                         in zip(self.paths, self.infos)},
+            'filedata': {datafile.path: datafile.info
+                         for datafile in self.datafiles},
             'metadata': {
                 'owner': self.owner_id,
-                'name': str(self)
+                'name': self.name
             }
         }
 
-    def yield_upload_details(self):
-        """Yield the information needed to upload a file to S3"""
-
-        details = zip(self.paths, self.urls, self.queries, self.headers)
-        for path, url, query, header in details:
-            yield path, url, query, header
-
-    def _collect_datafiles(self):
-        """Collect and hash the data files of a data-package"""
-
-        for resource in self.package.resources:
-            resource = DataFile(resource)
-            self.resources.append(resource)
-            self.infos.append(resource.info)
-            self.paths.append(resource.absolute_path)
-            self.headers.append(resource.header)
-            self.names.append(resource.name)
-
-            log.debug('Ingested %s into %s', resource, self.name)
-
-    def request_s3_upload(self):
-        """Obtain upload urls for data files"""
+    def request_s3_targets(self):
+        """S3 urls for uploading datafiles"""
 
         query = dict(jwt=self.token)
         response = request_upload(params=query, json=self.payload)
-        s3_targets = handle(response)['filedata']
-        self._unwrap_s3_targets(s3_targets)
+        json = handle(response)['filedata']
 
-        message = '%s is ready for upload: %s'
-        log.debug(message, self, self.paths)
+        for resource in self:
+            params = json[resource.path]['upload_query']
+            query = {k: v[0] for k, v in params.items()}
+            url = json[resource.path]['upload_url']
 
-        return s3_targets
+            message = '%s is ready for upload: %s'
+            log.info(message, resource, url)
 
-    def _unwrap_s3_targets(self, s3_targets):
-        for i in range(len(self)):
-            file = self.paths[i]
-            params = s3_targets[file]['upload_query']
-            self.queries.append({k: v[0] for k, v in params.items()})
-            self.urls.append(s3_targets[file]['upload_url'])
+            # I see no way other than dissecting a datafile url
+            self.package_url = self._extract_package_url(url)
+
+            yield url, resource.path, query, resource.header
+
+    @staticmethod
+    def _extract_package_url(url):
+        return '/'.join(url.split('/')[4:6])
+
+    def collect_datafiles(self):
+        """Collect all the datafiles belonging to the batch"""
+
+        for resource in self._package.resources:
+            datafile = OSResource(resource)
+            log.debug('Ingested %s into %s', datafile, self.name)
+            yield datafile
+
+    def push_to_s3(self, url, path, headers, query):
+        """Send data files for upload to the S3 bucket
+        """
+        log.debug('Started uploading %s to %s', path, url)
+
+        absolute_path = join(self._package.base_path, path)
+        stream = io.open(absolute_path, mode='rb')
+        future = self._session.put(url,
+                                   headers=headers,
+                                   data=stream,
+                                   params=query,
+                                   background_callback=self._s3_callback)
+
+        yield (future, stream)
+
+    @staticmethod
+    def _s3_callback(_, response):
+        """Report a succesfully S3 upload or fail """
+        # Will raise an HTTPError if 400 < code < 599:
+        handle(response)
+        log.info('Successful S3 upload: %s', response.url)
+
+    def handle_promise(self, future, stream):
+        """Collect all promises from S3 uploads
+        """
+        exception = future.exception()
+        if exception:
+            raise exception
+
+        response = future.result()
+
+        if response.status_code != 200:
+            message = 'Something went wrong uploading %s to S3: %s'
+            log.error(message, response.url, response.text)
+            raise HTTPError(message)
+
+        self.responses.append(response)
+        stream.close()
+
+    def insert_into_postgres(self):
+        """Upload datafiles into the postgres datastore
+        """
+        query = dict(jwt=self.token, datapackage=self.package_url)
+        response = upload_package(params=query)
+        return handle(response)
+
+    @property
+    def in_progress(self):
+        query = dict(datapackage=self.package_url)
+        response = upload_status(params=query).json()
+
+        if response.status_code == 404:
+            message = response['error']
+            answer = False
+        else:
+            message = 'status'
+            answer = True if response['progress'] == len(self) else False
+
+        stdout.flush()
+        args = message, response['progress'], len(self)
+        stdout.write('Loading (%s) %s/%s', *args)
+
+        return answer
 
     def __len__(self):
-        return len(self.resources)
+        return len(self.datafiles)
 
     def __repr__(self):
         return '<Batch [%s files]: %s>' % (len(self), self.name)
 
     def __str__(self):
-        return '%s (%s files)' % (self.name, len(self))
-
-    def __getitem__(self, index):
-        return self.resources[index]
+        return self.name
 
     def __iter__(self):
-        for resource in self.resources:
-            yield resource
+        for datafile in self.datafiles:
+            yield datafile
 
-    def __contains__(self, item):
-        return True if item in self.paths else False
+    def __getitem__(self, index):
+        return self.datafiles[index]
 
-
-class Bucket(object):
-    def __init__(self, batch):
-        self.session = FuturesSession()
-        self.batch = batch
-        self.payload = None
-        self.futures = []
-        self.responses = []
-        self.streams = []
-        self.exceptions = None
-        self.permission = {
-            'datapackage': self.bucket_url,
-            'jwt': self.batch.token
-        }
-        # We have to dissect the url of the 1st datafile
-        self.bucket_url = '/'.join(self.batch.urls[0].split('/')[:5])
-
-    def start_uploads(self):
-        """Queue data files for upload to the S3 bucket
-        """
-        for path, url, query, headers in self.batch.yield_upload_details():
-            log.debug('Started uploading %s to %s', path, url)
-
-            absolute_path = join(self.batch.package.base_path, path)
-            stream = io.open(absolute_path, mode='rb')
-            future = self.session.put(
-                url,
-                headers=headers,
-                data=stream,
-                params=query,
-                background_callback=self._notify_s3_success
-            )
-
-            self.streams.append(stream)
-            self.futures.append(future)
-
-    def collect_s3_results(self):
-        for i, future in enumerate(self.futures):
-            exception = future.exception()
-            if exception:
-                raise exception
-            response = future.result()
-            self.responses.append(response)
-
-    @staticmethod
-    def _notify_s3_success(_, response):
-        return handle(response)
-
-    def _close_file_streams(self):
-        for stream in self.streams:
-            stream.close()
-        return True
-
-    def load_to_postgres(self):
-        """Load a datapackage into the postgres datastore
-        """
-        response = upload_package(params=self.permission)
-        return handle(response)
-
-    def __repr__(self):
-        return self.batch.__repr__().replace('Batch', 'Bucket')
-
-    def __str__(self):
-        return self.batch.__str__().replace('Batch', 'Bucket')
-
-    def poll(self):
-        """Check the upload status of a datapackage
-        """
-        response = upload_package(params=self.permission)
-        return handle(response)
 
 if __name__ == '__main__':
-    u = User()
-    dp = DataPackage('/home/loic/repos/gobble/assets/'
-                     'datapackages/datapackage.1.json')
-    b = Batch(dp, u)
-    b.request_s3_upload()
-
-    s3 = Bucket(b)
-    s3.start_uploads()
+    upload_datapackage('/home/loic/repos/gobble/assets/datapackage/datapackage.json')
