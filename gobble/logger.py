@@ -1,14 +1,11 @@
 """A simple logger that logs to file and console"""
+
 from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 
-from json import dumps
-
 from future import standard_library
-standard_library.install_aliases()
-
 from logging import (getLogger,
                      FileHandler,
                      StreamHandler,
@@ -16,12 +13,9 @@ from logging import (getLogger,
                      Formatter,
                      Filter)
 
-from gobble.configuration import config
+from gobble.configuration import settings, GOBBLE_MODE
 
-
-def sdumps(dict_):
-    """A thin py2/py3 compatibilty wrapper for JSON dumps"""
-    return dumps(dict_, ensure_ascii=False, indent=2)
+standard_library.install_aliases()
 
 
 class MultilineFilter(Filter):
@@ -30,6 +24,7 @@ class MultilineFilter(Filter):
     # http://stackoverflow.com/questions/22934616
     # This is not considered good practice but it
     # preserves indentation and improves readability.
+    # I log the same information twice anyway.
 
     # TODO: display the correct (calling) module in the log record
 
@@ -51,19 +46,23 @@ def _configure_logger(name):
     logger.addFilter(multiline)
     logger.setLevel(DEBUG)
 
-    if config.FILE_LOG_LEVEL:
-        file = FileHandler(config.LOG_FILE)
-        file.setLevel(config.FILE_LOG_LEVEL)
-        file.setFormatter(Formatter(config.FILE_LOG_FORMAT))
+    if settings.FILE_LOG_LEVEL:
+        file = FileHandler(settings.LOG_FILE)
+        file.setLevel(settings.FILE_LOG_LEVEL)
+        file.setFormatter(Formatter(settings.FILE_LOG_FORMAT))
         logger.addHandler(file)
 
-    if config.CONSOLE_LOG_LEVEL:
+    if settings.CONSOLE_LOG_LEVEL:
         stream = StreamHandler()
-        stream.setLevel(config.CONSOLE_LOG_LEVEL)
-        stream.setFormatter(Formatter(config.CONSOLE_LOG_FORMAT))
+        stream.setLevel(settings.CONSOLE_LOG_LEVEL)
+        stream.setFormatter(Formatter(settings.CONSOLE_LOG_FORMAT))
         logger.addHandler(stream)
 
     return logger
 
 
 log = _configure_logger('Gobble')
+
+log.info('Gobble is running in %s mode', GOBBLE_MODE)
+log.info('File log level: %s', settings.CONSOLE_LOG_LEVEL)
+log.info('Console log level: %s', settings.FILE_LOG_LEVEL)

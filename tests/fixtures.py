@@ -1,56 +1,124 @@
 """Fixtures for test modules"""
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-from future import standard_library
-standard_library.install_aliases()
 
-from json import loads, dumps
-from os.path import abspath, join, dirname
-from sys import modules
-from future.backports.urllib.parse import urljoin
-from pytest import fixture
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+from json import loads
+from os import makedirs
+from os.path import join, expanduser
 from shutil import rmtree
+from unittest.mock import patch
+from future import standard_library
+from pytest import fixture
+from pytest import yield_fixture
+from requests_mock import Mocker
 import io
 
-from gobble.configuration import Config, config
+from gobble.configuration import settings, GOBBLE_MODE, DUMMY_DIR, \
+    SNAPSHOTS_DIR
 from gobble.logger import log
 
+standard_library.install_aliases()
 
-ROOT_DIR = abspath(join(dirname(modules['gobble'].__file__), '..'))
-PACKAGE_FILE = join(ROOT_DIR, 'assets', 'datapackage', 'datapackage.json')
-CONFIG_FILE = '/tmp/gobble-dummy/dummy.json'
-UPLOADER_PAYLOAD = join(ROOT_DIR, 'assets', 'datapackage', 'payload.json')
-RESPONSES_FILE = join(ROOT_DIR, 'assets', 'responses.json')
+
+# Sanity check
+# -----------------------------------------------------------------------------
+class BadTestingConfiguration(Exception):
+    pass
+
+
+if GOBBLE_MODE not in ('Testing', 'Development'):
+    sanity = (
+        'Please run the tests in Testing or Development mode '
+        'or bad things will happen and you will hate yourself'
+    )
+    raise BadTestingConfiguration(sanity)
+
+if settings.FREEZE_MODE:
+    sanity = (
+        "You can't run tests with FREEZE_MODE = True"
+    )
+    raise BadTestingConfiguration(sanity)
+
+
+# Mock API responses
+# -----------------------------------------------------------------------------
+@yield_fixture(scope='session')
+def mock_requests():
+    """Toggle mock requests ON/OFF."""
+
+    request_type = 'mock' if settings.MOCK_MODE else 'real'
+    log.debug('Sending %s requests', request_type)
+
+    if settings.MOCK_MODE:
+        with Mocker() as mock:
+            yield mock
+    else:
+        yield None
+
+
+# Fake the user's local set-up
+# -----------------------------------------------------------------------------
+@fixture
+def tmp_user_dir(request):
+    original = settings.USER_DIR
+    settings.USER_DIR = join(expanduser('~'), '.gobble.tmp')
+    try:
+        makedirs(settings.USER_DIR)
+    except IOError:
+        pass
+
+    def switch_back():
+        settings.USER_DIR = original
+        try:
+            rmtree(settings.USER_DIR)
+        except IOError:
+            pass
+
+    request.addfinalizer(switch_back)
+
+
+# User authentication and permission
+# -----------------------------------------------------------------------------
+@fixture
+def token():
+    filepath = join(DUMMY_DIR, 'token.json')
+    with io.open(filepath) as file:
+        return loads(file.read())
 
 
 @fixture
-def dummy_config(request):
-    """Return a dummy configuration object pointing to a dummy file"""
-    dummy_defaults = {'CONFIG_FILE': CONFIG_FILE}
-
-    def delete():
-        try:
-            rmtree('/tmp/gobble-dummy')
-        except OSError:
-            pass
-
-    request.addfinalizer(delete)
-    return Config(dummy_defaults).save()
+def permissions():
+    filepath = join(DUMMY_DIR, 'permissions.json')
+    with io.open(filepath) as file:
+        return loads(file.read())
 
 
-def get_mock_request(slug):
-    """Return """
-    with io.open(RESPONSES_FILE) as json:
-        specs = loads(json.read())
+# Mock Gobble and site-package classes
+# -----------------------------------------------------------------------------
+@fixture
+def mock_package():
+    package = patch('datapackage.DataPackage', autospec=True)
+    package.descriptor = {'name': 'mexican-budget-samples'}
+    snapshot_file = join(SNAPSHOTS_DIR, 'POST.datastore.json')
+    with io.open(snapshot_file) as file:
+        package.payload = loads(file.read())['request_json']
+    return package
 
-    verb = specs[slug]['method']
-    url = urljoin(config.OS_URL, specs[slug]['endpoint'])
-    status = specs[slug]['response']['status']
-    json = specs[slug]['response']['json']
 
-    log.debug('Mocking %s %s', verb, url)
-    log.debug('Expecting back [%s] %s', status, dumps(json))
+# noinspection PyShadowingNames
+@fixture
+def mock_user():
+    return patch('gobble.user.User', autospec=True)
 
-    return verb, url, status, json
+
+@fixture
+def mock_batch():
+    return patch('gobble.uploader.Batch', autospec=True)
+
+
+@fixture
+def mock_uploader():
+    return patch('gobble.uploader.Uploder', autospec=True)

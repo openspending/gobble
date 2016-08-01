@@ -1,0 +1,97 @@
+{
+    "timestamp": "2016-07-29 01:44:24.652680",
+    "host": "http://dev.openspending.org",
+    "method": "POST",
+    "path": [
+        "datastore/"
+    ],
+    "query": {
+        "json": null,
+        "jwt": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NzA1MDA0NTQsInVzZXJpZCI6IjVkZjRhN2IwNmE5NDBjOTkyZDFjNDQ1MjVkYWZmNDdiIn0.ta9ECVQSaqiVgBImHLIdUVf_KC21X4zKttPkr1gwM9g"
+    },
+    "request_json": {
+        "filedata": {
+            "data/sample.7.csv": {
+                "package": "mexican-budget-samples",
+                "name": "sample-7",
+                "length": 50504,
+                "md5": "0fOHGvO6eMvclzIxRAzLjQ==",
+                "type": "text/csv"
+            },
+            "data/sample.5.csv": {
+                "package": "mexican-budget-samples",
+                "name": "sample-5",
+                "length": 50795,
+                "md5": "PKqqmmNf88LXaC2kv1h7rQ==",
+                "type": "text/csv"
+            },
+            "data/sample.2.csv": {
+                "package": "mexican-budget-samples",
+                "name": "sample-2",
+                "length": 50666,
+                "md5": "fLlospGDQB2c/deTJUulLg==",
+                "type": "text/csv"
+            },
+            "data/sample.3.csv": {
+                "package": "mexican-budget-samples",
+                "name": "sample-3",
+                "length": 50547,
+                "md5": "2BOg+ssnHemhedvIVzNv/g==",
+                "type": "text/csv"
+            },
+            "data/sample.1.csv": {
+                "package": "mexican-budget-samples",
+                "name": "sample-1",
+                "length": 50556,
+                "md5": "+uqBmwvQLi0M2W2enNxD/A==",
+                "type": "text/csv"
+            },
+            "data/sample.4.csv": {
+                "package": "mexican-budget-samples",
+                "name": "sample-4",
+                "length": 51166,
+                "md5": "EJ2oF6Wluw4h3EjMtt7s9Q==",
+                "type": "text/csv"
+            },
+            "data/sample.8.csv": {
+                "package": "mexican-budget-samples",
+                "name": "sample-8",
+                "length": 49612,
+                "md5": "2QvGPFA6WDwfw5SuqMpqaA==",
+                "type": "text/csv"
+            },
+            "data/sample.9.csv": {
+                "package": "mexican-budget-samples",
+                "name": "sample-9",
+                "length": 51759,
+                "md5": "ubFroOAeno5P3UyUS5tZbQ==",
+                "type": "text/csv"
+            },
+            "data/sample.6.csv": {
+                "package": "mexican-budget-samples",
+                "name": "sample-6",
+                "length": 50153,
+                "md5": "giuo0Eib+70fKBkTSgwnNQ==",
+                "type": "text/csv"
+            }
+        },
+        "metadata": {
+            "name": "mexican-budget-samples",
+            "owner": "5df4a7b06a940c992d1c44525daff47b"
+        }
+    },
+    "response_json": {},
+    "request_headers": null,
+    "response_headers": {
+        "Content-Type": "text/html; charset=utf-8",
+        "Set-Cookie": "session=fe7cd509-811b-43c7-9efc-fc0387b4a3f8; Expires=Sun, 28-Aug-2016 23:44:24 GMT; HttpOnly; Path=/",
+        "Date": "Thu, 28 Jul 2016 23:44:24 GMT",
+        "Connection": "keep-alive",
+        "Content-Length": "0",
+        "Server": "nginx/1.11.2"
+    },
+    "history": [],
+    "cookies": {
+        "session": "fe7cd509-811b-43c7-9efc-fc0387b4a3f8"
+    }
+}

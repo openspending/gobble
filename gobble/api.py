@@ -1,81 +1,84 @@
-"""Expose the command line API"""
+"""This module handles all API calls"""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-from future import standard_library
-standard_library.install_aliases()
 
-from os.path import isfile, isdir
-from datapackage import DataPackage
-from os import getcwd
-from click.decorators import command
+from builtins import str
+from requests import Session
+from urllib.parse import (urlencode,
+                          urljoin,
+                          urlunsplit,
+                          urlsplit)
 
-from gobble.collection import Collection
-from gobble.downloader import Downloader
-from gobble.uploader import Uploader
-from gobble.elasticsearch import ElasticSearch
-from gobble.user import User
-from gobble.validation import Validator
+from gobble.configuration import settings
+from gobble.snapshot import SnapShot
 
 
-def resolve(target=None):
-    """Return a list of data-packages
+class EndPoint(object):
+    """This class represents an API endpoint"""
 
-    If the target is a data-package file, return it in a list. If it's
-    a directory, recursively find all data-packages inside the directory.
-    If it's neither, look for data-packages inside the current directory.
-    Raise an ValueError if nothing is found.
-    """
-    if isfile(target):
-        packages = [DataPackage(metadata=target)]
-    else:
-        target = target if isdir(target) else getcwd()
-        packages = Collection(target).packages
+    _session = Session()
 
-    if not packages:
-        raise ValueError('No data-fiscal-packages in %s', target)
+    def __init__(self, method, *path, trailing_slash=False):
+        self.has_slash = trailing_slash
+        self.method = method
+        self._path = path
 
-    return packages
+    @property
+    def target(self):
+        return urljoin(settings.OS_URL, '/'.join(self.path))
+
+    @property
+    def path(self):
+        # Deal with trailing slashes
+        path = list(self._path)
+        if self.has_slash:
+            path[-1] += '/'
+        return path
+
+    def _build_url(self, params):
+        """Encode the query string"""
+        query = urlencode(tuple(params.items()))
+        parts = urlsplit(self.target)._replace(query=query)
+        return urlunsplit(parts)
+
+    def __call__(self, **kwargs):
+        """Fire, take a snapshot and return the response"""
+        fire = getattr(self._session, self.method.lower())
+
+        params = kwargs.pop('params')
+        request_url = self._build_url(params) if params else self.target
+        response = fire(request_url, **kwargs)
+        info = request_url, response, params
+
+        SnapShot(self, *info, **kwargs)
+        return response
+
+    def __str__(self):
+        return '%s: /%s' % (self.method, '/'.join(self.path))
+
+    def __repr__(self):
+        return '<EndPoint ' + str(self) + '>'
+
+    def __dict__(self):
+        return {
+            'method': self.method,
+            'path': self.path,
+            'endslash': self.has_slash,
+            "url": self.target
+        }
 
 
-@command
-def configure(action):
-    """Set up command line user"""
-    user = User()
-    return getattr(user, action)
-
-
-@command
-def validate(packages, *feedback):
-    """Certify a data-package descriptor"""
-    for package in packages:
-        return Validator(package, *feedback)
-
-
-@command
-def find(kind, **query):
-    """Look for contributors and packages on Open-Spending"""
-    elastic = ElasticSearch()
-    return elastic.search(kind, **query)
-
-
-@command
-def upload(packages):
-    """Upload fiscal data into Open-Spending"""
-    for package in packages:
-        return Uploader(package)._upload_batch()
-
-
-@command
-def download(ids):
-    """Download fiscal data from Open-Spending"""
-    for id_ in ids:
-        return Downloader(id_).pull()
-
-
-@command
-def show(package):
-    """Preview tabular data in the shell"""
-    return package
+# Expose callable endpoint objects to other modules
+# -----------------------------------------------------------------------------
+authenticate_user = EndPoint('GET', 'user', 'check')
+authorize_user = EndPoint('GET', 'user', 'authorize')
+oauth_callback = EndPoint('GET', 'oauth', 'callback')
+update_user = EndPoint('POST', 'user', 'update')
+search_users = EndPoint('GET', 'search', 'user')
+search_packages = EndPoint('GET', 'search', 'package')
+upload_package = EndPoint('POST', 'datastore', 'upload')
+request_upload_urls = EndPoint('POST', 'datastore', trailing_slash=True)
+# -----------------------------------------------------------------------------
