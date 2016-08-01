@@ -5,39 +5,42 @@ from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
 
+from logging import INFO
+
+from datapackage import DataPackage
 from future import standard_library
 from pytest import mark
 
-from gobble.configuration import GOBBLE_MODE
+from gobble.configuration import GOBBLE_MODE, settings
 # noinspection PyUnresolvedReferences
 from tests.fixtures import mock_package, mock_user, permissions
-from gobble.upload import Batch
+from gobble.upload import Batch, report_validation_errors
 from tests.parameters import s3_bucket_test_cases
 from gobble.api import request_upload
 
 standard_library.install_aliases()
 
 
-# noinspection PyShadowingNames
-@mark.skipif(GOBBLE_MODE == 'Testing', reason='Requires Docker container')
-def test_request_upload_urls_returns_correct_json(mock_user,
-                                                  mock_package,
-                                                  permissions):
-
-    # This is an example of how NOT to test.
-    # I'm leaving it here as a reminder.
-    mock_user.permissions = permissions
-    batch = Batch(mock_user, mock_package)
-    response = batch.request_s3_upload()
-    assert response.description() == request_upload.snapshot['response_json']
+def test_report_validation_returns_list_of_messages_for_invalid_package():
+    bad_package = DataPackage({'foo': 'bar'})
+    report = report_validation_errors(bad_package)
+    assert isinstance(report, list)
+    assert report[0] == "'name' is a required property"
 
 
-# noinspection PyShadowingNames
-@mark.parametrize(['upload_url', 's3_bucket_url'], s3_bucket_test_cases)
-def test_s3_bucket_urls_are_parsed_correctly(upload_url,
-                                             s3_bucket_url,
-                                             mock_user,
-                                             mock_package):
-    batch = Batch(mock_user, mock_package)
-    batch.urls = {'foo': upload_url}
-    assert batch.s3_bucket == s3_bucket_url
+def test_report_validation_returns_none_for_valid_package():
+    bad_package = DataPackage({'name': 'foo'})
+    report = report_validation_errors(bad_package)
+    assert not report
+
+
+def test_report_validation_errors_logs_error_messages(capsys):
+    bad_package = DataPackage({'foo': 'bar'})
+    report_validation_errors(bad_package)
+    stdout, stderr = capsys.readouterr()
+    print('validating')
+    print(settings.CONSOLE_LOG_LEVEL)
+    print('yo', stdout)
+    if settings.CONSOLE_LOG_LEVEL <= INFO:
+        assert 'validating' in stdout
+        assert 'required property' in stdout

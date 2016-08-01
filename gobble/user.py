@@ -8,6 +8,8 @@ from __future__ import absolute_import
 import io
 
 from builtins import dict
+
+from click import command
 from future import standard_library
 from future.backports.http.server import HTTPServer, SimpleHTTPRequestHandler
 from pip.utils import cached_property
@@ -34,16 +36,17 @@ class TokenExpired(Exception):
     pass
 
 
-class UserUpdateError(Exception):
-    pass
-
-
 class User(object):
     """A contributor on the Open-Spending platform."""
 
     def __init__(self):
-        self._authentication = {}
-        self._permissions = []
+        self.authentication = self._get_authentication()
+        self._permissions = list(self._get_permissions())
+        self.name = None
+
+    @property
+    def permissions(self):
+        return {p.get('service'): p for p in self._permissions}
 
     @cached_property
     def token(self):
@@ -52,48 +55,31 @@ class User(object):
             log.debug('Your token is %s', json['token'])
             return json['token']
 
-    def authenticate(self):
+    def _get_authentication(self):
         query = dict(jwt=self.token)
         response = authenticate_user(params=query)
-        self._authentication = handle(response)
-
-        if not self._authentication['authenticated']:
+        authentication = handle(response)
+        self.name = authentication['profile']['name']
+        if not authentication['authenticated']:
             message = 'Token has expired: request a new one'
             log.error(message)
             raise TokenExpired(message)
 
         log.info('Hello %s! You are logged in Open-Spending', self)
-        return self._authentication
+        return authentication
 
-    def request_permissions(self):
+    def _get_permissions(self):
         for service in OS_SERVICES:
             query = dict(jwt=self.token, service=service)
             response = authorize_user(params=query)
-            json = handle(response)
-            self._permissions.append(json)
-            return self._permissions
-
-    @property
-    def permissions(self):
-        return {p.get('service'): p for p in self._permissions}
-
-    def update(self, **field):
-        response = update_user(jwt=self.token, **field)
-        confirmation = handle(response)
-        if not confirmation['success']:
-            raise UserUpdateError(confirmation['error'])
+            permission = handle(response)
+            yield permission
 
     def __str__(self):
-        return self._authentication['profile']['name']
+        return self.name
 
     def __repr__(self):
         return '<User: ' + str(self) + '>'
-
-    def info(self):
-        user = self._authentication
-        user.update(self._permissions)
-        user.update(self.token)
-        return user
 
 
 class LocalHost(SimpleHTTPRequestHandler):
@@ -109,6 +95,7 @@ class LocalHost(SimpleHTTPRequestHandler):
         log.info('Saved your token in %s', TOKEN_FILE)
 
 
+# @command(name='start')
 def create_user():
     """Get the new user a token and cache """
 
@@ -140,20 +127,22 @@ def create_user():
         server = HTTPServer(settings.LOCALHOST, LocalHost)
         server.serve_forever()
 
-    def cache(info, file):
+    def cache(info_, file):
         with io.open(file, 'w+', encoding='utf-8') as json:
-            json.write(dumps(info, ensure_ascii=False))
+            json.write(dumps(info_, ensure_ascii=False))
 
     install_user_folder()
     request_new_token()
 
     user = User()
-    user.authenticate()
-    user.request_permissions()
 
-    cache(user.token, TOKEN_FILE)
-    cache(user._permissions, PERMISSIONS_FILE)
-    cache(user._authentication, AUTHENTICATION_FILE)
+    cached_info = (
+        (user.token, TOKEN_FILE),
+        (user._permissions, PERMISSIONS_FILE),
+        (user.authentication, AUTHENTICATION_FILE)
+    )
+    for info in cached_info:
+        cache(*info)
 
     return user
 
