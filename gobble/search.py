@@ -1,13 +1,19 @@
 """Search for users and package inside the ElasticSearch database"""
 
+from click import command
 
 from gobble.api import search_packages, handle
+from gobble.user import User
+
+
+user = User()
 
 SEARCH_KEYS = ['q', 'size', 'title', 'author', 'description',
                'regionCode', 'countryCode', 'cityCode']
 
 
-def search(query, user=None, size=None):
+@command(name='pull')
+def elascticsearch(query, private=True, size=None):
     """Query the ElasticSearch database.
 
     You can search a package by `title`, `author`, `description`, `regionCode`,
@@ -20,11 +26,11 @@ def search(query, user=None, size=None):
     parameter.
 
     :param query: a `dict` of key value pairs
-    :param user: an authenticated user
+    :param private: show private datapackages
     :param size: the number of results returned
 
     :type query: "class:`dict`
-    :rtype user: :class:`gobble.user.User'
+    :rtype private: :class:`bool'
     :rtype size: :class:`int'
 
     :return: a dictionary with the results
@@ -37,7 +43,7 @@ def search(query, user=None, size=None):
 
     quoted_query = _sanitize(query)
 
-    if user:
+    if private:
         quoted_query.update(jwt=user.token)
 
     response = search_packages(params=quoted_query)
