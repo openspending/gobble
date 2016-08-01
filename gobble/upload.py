@@ -262,7 +262,7 @@ class Batch(object):
 
     @staticmethod
     def _extract_package_url(url):
-        return '/'.join(url.split('/')[4:6])
+        return '/'.join(url.split('/')[:6])
 
     def collect_datafiles(self):
         """Collect all the datafiles belonging to the batch"""
@@ -270,7 +270,7 @@ class Batch(object):
         for resource in self._package.resources:
             datafile = OSResource(resource)
             log.debug('Ingested %s into %s', datafile, self.name)
-            yield datafile
+            self.datafiles.append(datafile)
 
     def push_to_s3(self, url, path, headers, query):
         """Send data files for upload to the S3 bucket
@@ -285,7 +285,7 @@ class Batch(object):
                                    params=query,
                                    background_callback=self._s3_callback)
 
-        yield (future, stream)
+        return [future, stream]
 
     @staticmethod
     def _s3_callback(_, response):
@@ -295,7 +295,7 @@ class Batch(object):
         log.info('Successful S3 upload: %s', response.url)
 
     def handle_promise(self, future, stream):
-        """Collect all promises from S3 uploads
+        """Collect a promise from S3 uploads
         """
         exception = future.exception()
         if exception:
