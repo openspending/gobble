@@ -1,55 +1,60 @@
 """This module exposes user configurable settings"""
 
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
+from logging import DEBUG, INFO
+from os import getenv
+from os.path import join, abspath, dirname, expanduser
+from sys import modules
 from future import standard_library
-from builtins import super
-from past.types import unicode
 
 standard_library.install_aliases()
 
-from json import loads, dumps
-from os import getenv, makedirs
-from os.path import isfile, dirname
-import io
-
-from gobble import settings as config_module
+HOME = abspath(join(expanduser('~')))
+ROOT_DIR = abspath(join(dirname(__file__), '..'))
+GOBBLE_MODE = getenv('GOBBLE_MODE', 'Production')
 
 
-# Importing modules other than settings here will cause circular imports
+class Production(object):
+    EXPANDED_LOG_STYLE = False
+    CONSOLE_LOG_LEVEL = INFO
+    FILE_LOG_LEVEL = DEBUG
+    CONSOLE_LOG_FORMAT = '[%(name)s] [%(levelname)s] %(message)s'
+    OS_URL = 'http://next.openspending.org'
+    USER_DIR = join(HOME, '.gobble')
+    LOG_FILE = join(HOME, '.gobble', 'gobble.log')
+    LOCALHOST = ('127.0.0.1', 8001)
+    FILE_LOG_FORMAT = ('[%(name)s] '
+                       '[%(asctime)s] '
+                       '[%(module)s] '
+                       '[%(funcName)s] '
+                       '[%(levelname)s] '
+                       '%(message)s')
 
 
-class Config(dict):
-    """Gobble user configurable settings"""
-
-    def __init__(self, defaults):
-        super(Config, self).__init__(**defaults)
-        self.update(self.load())
-
-    def __getattr__(self, item):
-        if item.isupper():
-            return self[item]
-
-    def load(self):
-        if not isfile(self.CONFIG_FILE):
-            return {}
-        with io.open(self.CONFIG_FILE) as json:
-            return loads(json.read())
-
-    def save(self):
-        makedirs(dirname(self.CONFIG_FILE))
-        with io.open(self.CONFIG_FILE, 'w+', encoding='utf-8') as file:
-            # What a freaking mess dude... I hate python 2 with a passion
-            file.write(unicode(dumps(self, ensure_ascii=False, indent=2)))
-        return self
+class Development(Production):
+    EXPANDED_LOG_STYLE = True
+    CONSOLE_LOG_LEVEL = DEBUG
+    FILE_LOG_LEVEL = None
+    LOG_FILE = None
+    OS_URL = 'http://dev.openspending.org'
+    USER_DIR = join(HOME, '.gobble.dev')
+    CONSOLE_LOG_FORMAT = ('[%(name)s] '
+                          '[%(module)s] '
+                          '[%(funcName)s] '
+                          '[%(levelname)s] '
+                          '%(message)s')
 
 
-_default_mode = getenv('GOBBLE_MODE', 'Production')
-_default_class = getattr(config_module, _default_mode)
-_default_dict = {key: getattr(_default_class, key)
-                 for key in dir(_default_class)
-                 if key.isupper()}
+class Testing(Production):
+    USER_DIR = join(HOME, '.gobble.test')
+    LOG_FILE = None
+    CONSOLE_LOG_LEVEL = DEBUG
+    FILE_LOG_LEVEL = DEBUG
 
-config = Config(_default_dict)
+
+settings = getattr(modules[__name__], GOBBLE_MODE)
+

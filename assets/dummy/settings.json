@@ -1,0 +1,25 @@
+{
+    "LOCALHOST": [
+        "127.0.0.1",
+        8001
+    ],
+    "DATAPACKAGE_DETECTION_THRESHOLD": 1,
+    "USER_DIR": "/home/loic/.gobble.dev",
+    "LOG_FILE": null,
+    "VALIDATION_FEEDBACK_OPTIONS": [
+        "message"
+    ],
+    "EXPANDED_LOG_STYLE": true,
+    "JSON_INDENT": 4,
+    "CONSOLE_LOG_LEVEL": 10,
+    "FILE_LOG_LEVEL": null,
+    "CONSOLE_LOG_FORMAT": "[%(name)s] [%(module)s] [%(funcName)s] [%(levelname)s] %(message)s",
+    "S3_BUCKET": "http://fakes3/fake-bucket",
+    "SETTINGS_FILE": "/home/loic/.gobble.dev/config.json",
+    "FREEZE_MODE": true,
+    "MOCK_MODE": false,
+    "TOKEN_FILE": "/home/loic/.gobble.dev/token.json",
+    "FILE_LOG_FORMAT": "[%(name)s] [%(asctime)s] [%(module)s] [%(funcName)s] [%(levelname)s] %(message)s",
+    "OS_URL": "http://dev.openspending.org",
+    "HASHING_BLOCK_SIZE": 65536
+}

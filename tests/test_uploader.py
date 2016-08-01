@@ -4,50 +4,40 @@ from __future__ import unicode_literals
 from __future__ import print_function
 from __future__ import division
 from __future__ import absolute_import
+
 from future import standard_library
+from pytest import mark
+
+from gobble.settings import GOBBLE_MODE
+# noinspection PyUnresolvedReferences
+from tests.fixtures import mock_package, mock_user, permissions
+from gobble.uploader import Batch
+from tests.parameters import s3_bucket_test_cases
+from gobble.api import request_upload_urls
+
 standard_library.install_aliases()
 
-from pytest import fixture
-from json import dumps
-from datapackage import DataPackage
 
-from gobble.user import User
-from gobble.uploader import Uploader, Batch
-from gobble.configuration import config
-from gobble.logger import log
-from tests.fixtures import get_mock_request, PACKAGE_FILE
+# noinspection PyShadowingNames
+@mark.skipif(GOBBLE_MODE == 'Testing', reason='Requires Docker container')
+def test_request_upload_urls_returns_correct_json(mock_user,
+                                                  mock_package,
+                                                  permissions):
 
-log.debug('Mock tests requests: %s', config.MOCK_REQUESTS)
-
-
-@fixture
-def mock_endpoints(mock_requests):
-    if mock_requests:
-        endpoints = ('authenticate', 'get-permissions', 'request-upload')
-        for endpoints in endpoints:
-            method, url, status, json = get_mock_request(endpoints)
-            getattr(mock_requests, method.lower())(url, text=dumps(json))
+    # This is an example of how NOT to test.
+    # I'm leaving it here as a reminder.
+    mock_user.permissions = permissions
+    batch = Batch(mock_user, mock_package)
+    response = batch._request_upload_urls()
+    assert response.json() == request_upload_urls.snapshot['response_json']
 
 
-# noinspection PyUnusedLocal,PyShadowingNames
-def test_sending_datapackage_info_returns_dict(mock_endpoints):
-    user_ = User()
-    package_ = DataPackage(PACKAGE_FILE)
-    batch_ = Batch(user_, package_).prepare()
-    uploader = Uploader(batch_)
-    uploader.push()
-    uploader.pull()
-    assert uploader.close()
-
-
-# @responses.activate
-# def test_sending_payload_info_returns_mock_upload_url():
-#     for request_id in ('authenticate', 'get-permissions', 'request-upload'):
-#         verb, url, status, json = get_mock_request(request_id)
-#         responses.add(verb, url, status=status, json=json)
-#
-#     user = User()
-#     package = DataPackage(PACKAGE_FILE)
-#     uploader = Uploader(user, package)
-#
-#     assert uploader.request_upload().status_code == 200
+# noinspection PyShadowingNames
+@mark.parametrize(['upload_url', 's3_bucket_url'], s3_bucket_test_cases)
+def test_s3_bucket_urls_are_parsed_correctly(upload_url,
+                                             s3_bucket_url,
+                                             mock_user,
+                                             mock_package):
+    batch = Batch(mock_user, mock_package)
+    batch.upload_urls = {'foo': upload_url}
+    assert batch.s3_bucket == s3_bucket_url

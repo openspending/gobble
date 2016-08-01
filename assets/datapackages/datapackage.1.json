@@ -1,0 +1,570 @@
+{
+  "model": {
+    "dimensions": {
+      "date": {
+        "dimensionType": "datetime",
+        "primaryKey": [
+          "Ciclo"
+        ],
+        "attributes": {
+          "Ciclo": {
+            "source": "Ciclo",
+            "title": "Ciclo"
+          }
+        }
+      },
+      "administrative-classification": {
+        "dimensionType": "classification",
+        "primaryKey": [
+          "ID_Ramo",
+          "ID_UR"
+        ],
+        "attributes": {
+          "ID_Ramo": {
+            "source": "ID_Ramo",
+            "title": "ID_Ramo"
+          },
+          "Ramo": {
+            "source": "Ramo",
+            "title": "Ramo"
+          },
+          "ID_UR": {
+            "source": "ID_UR",
+            "title": "ID_UR",
+            "parent": "ID_Ramo"
+          },
+          "Unidad_Responsible": {
+            "source": "UR",
+            "title": "Unidad Responsible"
+          }
+        },
+        "classificationType": "administrative"
+      },
+      "functional-classification": {
+        "dimensionType": "classification",
+        "primaryKey": [
+          "ID_FIN",
+          "ID_Funcion",
+          "ID_Subfuncion",
+          "ID_AI"
+        ],
+        "attributes": {
+          "ID_FIN": {
+            "source": "ID_FIN",
+            "title": "ID_FIN"
+          },
+          "Finalidad": {
+            "source": "FIN",
+            "title": "Finalidad"
+          },
+          "ID_Funcion": {
+            "source": "ID_Funcion",
+            "title": "ID_Funcion",
+            "parent": "ID_FIN"
+          },
+          "Funcion": {
+            "source": "Funcion",
+            "title": "Funcion"
+          },
+          "ID_Subfuncion": {
+            "source": "ID_Subfuncion",
+            "title": "ID_Subfuncion",
+            "parent": "ID_Funcion"
+          },
+          "Subfuncion": {
+            "source": "Subfuncion",
+            "title": "Subfuncion"
+          },
+          "ID_AI": {
+            "source": "ID_AI",
+            "title": "ID_AI",
+            "parent": "ID_Subfuncion"
+          },
+          "Actividad_Institucional": {
+            "source": "Actividad_Institucional",
+            "title": "Actividad Institucional"
+          }
+        },
+        "classificationType": "functional"
+      },
+      "activity": {
+        "dimensionType": "activity",
+        "primaryKey": [
+          "ID_Modalidad",
+          "ID_PP"
+        ],
+        "attributes": {
+          "ID_Modalidad": {
+            "source": "ID_Modalidad",
+            "title": "ID_Modalidad"
+          },
+          "Modalidad": {
+            "source": "Modalidad",
+            "title": "Modalidad",
+            "labelfor": "ID_Modalidad"
+          },
+          "ID_PP": {
+            "source": "ID_PP",
+            "title": "ID_PP",
+            "parent": "ID_Modalidad"
+          },
+          "Programa_Presupuestario": {
+            "source": "PP",
+            "title": "Programa Presupuestario",
+            "labelfor": "ID_PP"
+          }
+        }
+      },
+      "economic-classification": {
+        "dimensionType": "classification",
+        "primaryKey": [
+          "ID_OG"
+        ],
+        "attributes": {
+          "ID_OG": {
+            "source": "ID_OG",
+            "title": "ID_OG"
+          },
+          "Objeto_Gasto": {
+            "source": "Objeto_Gasto",
+            "title": "Objeto Gasto"
+          }
+        },
+        "classificationType": "economic"
+      },
+      "expenditure-type": {
+        "dimensionType": "other",
+        "primaryKey": [
+          "Tipo_Gasto"
+        ],
+        "attributes": {
+          "Tipo_Gasto": {
+            "source": "Tipo_Gasto",
+            "title": "Tipo Gasto"
+          }
+        }
+      },
+      "fin-source": {
+        "dimensionType": "other",
+        "primaryKey": [
+          "ID_FF",
+          "Fuente_Financiamiento",
+          "ID_EF",
+          "Entidad_Federativa"
+        ],
+        "attributes": {
+          "ID_FF": {
+            "source": "ID_FF",
+            "title": "ID_FF"
+          },
+          "Fuente_Financiamiento": {
+            "source": "Fuente_Financiamiento",
+            "title": "Fuente Financiamiento",
+            "labelfor": "ID_FF"
+          },
+          "ID_EF": {
+            "source": "ID_EF",
+            "title": "ID_EF"
+          },
+          "Entidad_Federativa": {
+            "source": "EF",
+            "title": "Entidad Federativa",
+            "labelfor": "ID_FF"
+          }
+        }
+      },
+      "budget-line-id": {
+        "dimensionType": "fact",
+        "primaryKey": [
+          "Identificador_de_Clave_de_Cartera"
+        ],
+        "attributes": {
+          "Identificador_de_Clave_de_Cartera": {
+            "source": "ID_CC",
+            "title": "Identificador de Clave de Cartera"
+          }
+        }
+      }
+    },
+    "measures": {
+      "Aprobado": {
+        "source": "Aprobado",
+        "title": "Aprobado",
+        "currency": "MXN",
+        "direction": "expenditure",
+        "phase": "approved"
+      },
+      "Modificado": {
+        "source": "Modificado",
+        "title": "Modificado",
+        "currency": "MXN",
+        "direction": "expenditure",
+        "phase": "adjusted"
+      },
+      "Devengado": {
+        "source": "Devengado",
+        "title": "Devengado",
+        "currency": "MXN",
+        "direction": "expenditure",
+        "phase": "proposed"
+      },
+      "Pagado": {
+        "source": "Pagado",
+        "title": "Pagado",
+        "currency": "MXN",
+        "direction": "expenditure",
+        "phase": "executed"
+      },
+      "Adefas": {
+        "source": "Adefas",
+        "title": "Adefas",
+        "currency": "MXN",
+        "direction": "expenditure",
+        "phase": "executed"
+      },
+      "Ejercicio": {
+        "source": "Ejercicio",
+        "title": "Ejercicio",
+        "currency": "MXN",
+        "direction": "expenditure",
+        "phase": "executed"
+      }
+    }
+  },
+  "regionCode": "na",
+  "countryCode": "MX",
+  "cityCode": "Mexico City",
+  "fiscalPeriod": {
+    "start": "2015-01-01",
+    "end": "2015-12-31"
+  },
+  "title": "Mexican federal budget",
+  "name": "mexican-federal-budget",
+  "description": "This datapackage is used to test the upload module",
+  "resources": [
+    {
+      "name": "data",
+      "format": "csv",
+      "path": "data.1/data.csv",
+      "mediatype": "application/vnd.ms-excel",
+      "bytes": 5056227,
+      "dialect": {
+        "csvddfVersion": 1,
+        "delimiter": ",",
+        "lineTerminator": "\n"
+      },
+      "encoding": "utf-8",
+      "schema": {
+        "fields": [
+          {
+            "title": "Ciclo",
+            "name": "Ciclo",
+            "slug": "Ciclo",
+            "type": "integer",
+            "format": "default",
+            "osType": "date:fiscal-year",
+            "conceptType": "date"
+          },
+          {
+            "title": "ID_Ramo",
+            "name": "ID_Ramo",
+            "slug": "ID_Ramo",
+            "type": "string",
+            "format": "default",
+            "osType": "administrative-classification:generic:level1:code:full",
+            "conceptType": "administrative-classification"
+          },
+          {
+            "title": "Ramo",
+            "name": "Ramo",
+            "slug": "Ramo",
+            "type": "string",
+            "format": "default",
+            "osType": "administrative-classification:generic:level1:description",
+            "conceptType": "administrative-classification"
+          },
+          {
+            "title": "ID_UR",
+            "name": "ID_UR",
+            "slug": "ID_UR",
+            "type": "string",
+            "format": "default",
+            "osType": "administrative-classification:generic:level2:code:full",
+            "conceptType": "administrative-classification"
+          },
+          {
+            "title": "Unidad Responsible",
+            "name": "UR",
+            "slug": "Unidad_Responsible",
+            "type": "string",
+            "format": "default",
+            "osType": "administrative-classification:generic:level2:description",
+            "conceptType": "administrative-classification"
+          },
+          {
+            "title": "ID_FIN",
+            "name": "ID_FIN",
+            "slug": "ID_FIN",
+            "type": "string",
+            "format": "default",
+            "osType": "functional-classification:generic:level1:code:full",
+            "conceptType": "functional-classification"
+          },
+          {
+            "title": "Finalidad",
+            "name": "FIN",
+            "slug": "Finalidad",
+            "type": "string",
+            "format": "default",
+            "osType": "functional-classification:generic:level1:description",
+            "conceptType": "functional-classification"
+          },
+          {
+            "title": "ID_Funcion",
+            "name": "ID_Funcion",
+            "slug": "ID_Funcion",
+            "type": "string",
+            "format": "default",
+            "osType": "functional-classification:generic:level2:code:full",
+            "conceptType": "functional-classification"
+          },
+          {
+            "title": "Funcion",
+            "name": "Funcion",
+            "slug": "Funcion",
+            "type": "string",
+            "format": "default",
+            "osType": "functional-classification:generic:level2:description",
+            "conceptType": "functional-classification"
+          },
+          {
+            "title": "ID_Subfuncion",
+            "name": "ID_Subfuncion",
+            "slug": "ID_Subfuncion",
+            "type": "string",
+            "format": "default",
+            "osType": "functional-classification:generic:level3:code:full",
+            "conceptType": "functional-classification"
+          },
+          {
+            "title": "Subfuncion",
+            "name": "Subfuncion",
+            "slug": "Subfuncion",
+            "type": "string",
+            "format": "default",
+            "osType": "functional-classification:generic:level3:description",
+            "conceptType": "functional-classification"
+          },
+          {
+            "title": "ID_AI",
+            "name": "ID_AI",
+            "slug": "ID_AI",
+            "type": "string",
+            "format": "default",
+            "osType": "functional-classification:generic:level4:code:full",
+            "conceptType": "functional-classification"
+          },
+          {
+            "title": "Actividad Institucional",
+            "name": "Actividad_Institucional",
+            "slug": "Actividad_Institucional",
+            "type": "string",
+            "format": "default",
+            "osType": "functional-classification:generic:level4:description",
+            "conceptType": "functional-classification"
+          },
+          {
+            "title": "ID_Modalidad",
+            "name": "ID_Modalidad",
+            "slug": "ID_Modalidad",
+            "type": "string",
+            "format": "default",
+            "osType": "activity:generic:program:code",
+            "conceptType": "activity"
+          },
+          {
+            "title": "Modalidad",
+            "name": "Modalidad",
+            "slug": "Modalidad",
+            "type": "string",
+            "format": "default",
+            "osType": "activity:generic:program:label",
+            "conceptType": "activity"
+          },
+          {
+            "title": "ID_PP",
+            "name": "ID_PP",
+            "slug": "ID_PP",
+            "type": "string",
+            "format": "default",
+            "osType": "activity:generic:project:code",
+            "conceptType": "activity"
+          },
+          {
+            "title": "Programa Presupuestario",
+            "name": "PP",
+            "slug": "Programa_Presupuestario",
+            "type": "string",
+            "format": "default",
+            "osType": "activity:generic:project:label",
+            "conceptType": "activity"
+          },
+          {
+            "title": "ID_OG",
+            "name": "ID_OG",
+            "slug": "ID_OG",
+            "type": "string",
+            "format": "default",
+            "osType": "economic-classification:generic:code",
+            "conceptType": "economic-classification"
+          },
+          {
+            "title": "Objeto Gasto",
+            "name": "Objeto_Gasto",
+            "slug": "Objeto_Gasto",
+            "type": "string",
+            "format": "default",
+            "osType": "economic-classification:generic:description",
+            "conceptType": "economic-classification"
+          },
+          {
+            "title": "Tipo Gasto",
+            "name": "Tipo_Gasto",
+            "slug": "Tipo_Gasto",
+            "type": "string",
+            "format": "default",
+            "osType": "expenditure-type",
+            "conceptType": "expenditure-type"
+          },
+          {
+            "title": "ID_FF",
+            "name": "ID_FF",
+            "slug": "ID_FF",
+            "type": "string",
+            "format": "default",
+            "osType": "fin-source:generic:level1:code",
+            "conceptType": "fin-source"
+          },
+          {
+            "title": "Fuente Financiamiento",
+            "name": "Fuente_Financiamiento",
+            "slug": "Fuente_Financiamiento",
+            "type": "string",
+            "format": "default",
+            "osType": "fin-source:generic:level1:label",
+            "conceptType": "fin-source"
+          },
+          {
+            "title": "ID_EF",
+            "name": "ID_EF",
+            "slug": "ID_EF",
+            "type": "string",
+            "format": "default",
+            "osType": "fin-source:generic:level2:code",
+            "conceptType": "fin-source"
+          },
+          {
+            "title": "Entidad Federativa",
+            "name": "EF",
+            "slug": "Entidad_Federativa",
+            "type": "string",
+            "format": "default",
+            "osType": "fin-source:generic:level2:label",
+            "conceptType": "fin-source"
+          },
+          {
+            "title": "Identificador de Clave de Cartera",
+            "name": "ID_CC",
+            "slug": "Identificador_de_Clave_de_Cartera",
+            "type": "string",
+            "format": "default",
+            "osType": "budget-line-id",
+            "conceptType": "budget-line-id"
+          },
+          {
+            "title": "Aprobado",
+            "name": "Aprobado",
+            "slug": "Aprobado",
+            "type": "number",
+            "format": "default",
+            "osType": "value",
+            "conceptType": "value",
+            "decimalChar": ".",
+            "groupChar": ","
+          },
+          {
+            "title": "Modificado",
+            "name": "Modificado",
+            "slug": "Modificado",
+            "type": "number",
+            "format": "default",
+            "osType": "value",
+            "conceptType": "value",
+            "decimalChar": ".",
+            "groupChar": ","
+          },
+          {
+            "title": "Devengado",
+            "name": "Devengado",
+            "slug": "Devengado",
+            "type": "number",
+            "format": "default",
+            "osType": "value",
+            "conceptType": "value",
+            "decimalChar": ".",
+            "groupChar": ","
+          },
+          {
+            "title": "Pagado",
+            "name": "Pagado",
+            "slug": "Pagado",
+            "type": "number",
+            "format": "default",
+            "osType": "value",
+            "conceptType": "value",
+            "decimalChar": ".",
+            "groupChar": ","
+          },
+          {
+            "title": "Adefas",
+            "name": "Adefas",
+            "slug": "Adefas",
+            "type": "number",
+            "format": "default",
+            "osType": "value",
+            "conceptType": "value",
+            "decimalChar": ".",
+            "groupChar": ","
+          },
+          {
+            "title": "Ejercicio",
+            "name": "Ejercicio",
+            "slug": "Ejercicio",
+            "type": "number",
+            "format": "default",
+            "osType": "value",
+            "conceptType": "value",
+            "decimalChar": ".",
+            "groupChar": ","
+          }
+        ],
+        "primaryKey": [
+          "Ciclo",
+          "ID_Ramo",
+          "ID_UR",
+          "ID_FIN",
+          "ID_Funcion",
+          "ID_Subfuncion",
+          "ID_AI",
+          "ID_Modalidad",
+          "ID_PP",
+          "ID_OG",
+          "ID_CC"
+        ]
+      }
+    }
+  ],
+  "@context": "http://schemas.frictionlessdata.io/fiscal-data-package.jsonld",
+  "owner": "5df4a7b06a940c992d1c44525daff47b",
+  "author": "loic <loic.jounot@gmail.com>"
+}
