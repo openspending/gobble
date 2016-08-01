@@ -15,17 +15,27 @@ from os.path import join
 from json import loads
 from os import mkdir
 from threading import Thread
+from json import dumps
 
 from gobble.logger import log
-from gobble.configuration import settings, OPENSPENDING_SERVICES, local
-from gobble.api import authenticate_user, authorize_user, update_user
-from gobble.utilities import (dumps23,
-                              handle,
-                              wopen23,
-                              TokenExpired,
-                              UserUpdateError)
+from gobble.configuration import settings
+from gobble.api import authenticate_user, authorize_user, update_user, handle
 
 standard_library.install_aliases()
+
+
+OS_SERVICES = ['os.datastore']
+TOKEN_FILE = join(settings.USER_DIR, 'token.json')
+PERMISSIONS_FILE = 'permission.json'
+AUTHENTICATION_FILE = 'authentication.json'
+
+
+class TokenExpired(Exception):
+    pass
+
+
+class UserUpdateError(Exception):
+    pass
 
 
 class User(object):
@@ -37,8 +47,7 @@ class User(object):
 
     @cached_property
     def token(self):
-        filepath = join(settings.USER_DIR, local.TOKEN_FILE)
-        with io.open(filepath) as cache:
+        with io.open(TOKEN_FILE) as cache:
             json = loads(cache.read())
             log.debug('Your token is %s', json['token'])
             return json['token']
@@ -57,7 +66,7 @@ class User(object):
         return self._authentication
 
     def request_permissions(self):
-        for service in OPENSPENDING_SERVICES:
+        for service in OS_SERVICES:
             query = dict(jwt=self.token, service=service)
             response = authorize_user(params=query)
             json = handle(response)
@@ -94,11 +103,10 @@ class LocalHost(SimpleHTTPRequestHandler):
         log.debug('Callback received: %s', self.path)
         token = self.path[6:]
 
-        filepath = join(settings.USER_DIR, local.TOKEN_FILE)
-        with wopen23(filepath) as file:
-            file.write(dumps23({'token': token}))
+        with io.open(TOKEN_FILE, 'w+', encoding='utf-8') as file:
+            file.write(dumps({'token': token}, ensure_ascii=False))
 
-        log.info('Saved your token in %s', filepath)
+        log.info('Saved your token in %s', TOKEN_FILE)
 
 
 def create_user():
@@ -133,9 +141,8 @@ def create_user():
         server.serve_forever()
 
     def cache(info, file):
-        filepath = join(settings.USER_DIR, file)
-        with wopen23(filepath) as json:
-            json.write(dumps23(info))
+        with io.open(file, 'w+', encoding='utf-8') as json:
+            json.write(dumps(info, ensure_ascii=False))
 
     install_user_folder()
     request_new_token()
@@ -144,8 +151,12 @@ def create_user():
     user.authenticate()
     user.request_permissions()
 
-    cache(user.token, local.TOKEN_FILE)
-    cache(user._permissions, local.PERMISSIONS_FILE)
-    cache(user._authentication, local.AUTHENTICATION_FILE)
+    cache(user.token, TOKEN_FILE)
+    cache(user._permissions, PERMISSIONS_FILE)
+    cache(user._authentication, AUTHENTICATION_FILE)
 
     return user
+
+
+if __name__ == '__main__':
+    u = User()

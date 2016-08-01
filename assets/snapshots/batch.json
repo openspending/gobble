@@ -1,71 +1,71 @@
 {
-    "filedata": {
-        "data/sample.9.csv": {
-            "type": "text/csv",
-            "name": "sample-9",
-            "md5": "ubFroOAeno5P3UyUS5tZbQ==",
-            "package": "mexican-budget-samples",
-            "length": 51759
-        },
-        "data/sample.1.csv": {
-            "type": "text/csv",
-            "name": "sample-1",
-            "md5": "+uqBmwvQLi0M2W2enNxD/A==",
-            "package": "mexican-budget-samples",
-            "length": 50556
-        },
-        "data/sample.4.csv": {
-            "type": "text/csv",
-            "name": "sample-4",
-            "md5": "EJ2oF6Wluw4h3EjMtt7s9Q==",
-            "package": "mexican-budget-samples",
-            "length": 51166
-        },
-        "data/sample.6.csv": {
-            "type": "text/csv",
-            "name": "sample-6",
-            "md5": "giuo0Eib+70fKBkTSgwnNQ==",
-            "package": "mexican-budget-samples",
-            "length": 50153
-        },
-        "data/sample.8.csv": {
-            "type": "text/csv",
-            "name": "sample-8",
-            "md5": "2QvGPFA6WDwfw5SuqMpqaA==",
-            "package": "mexican-budget-samples",
-            "length": 49612
-        },
-        "data/sample.7.csv": {
-            "type": "text/csv",
-            "name": "sample-7",
-            "md5": "0fOHGvO6eMvclzIxRAzLjQ==",
-            "package": "mexican-budget-samples",
-            "length": 50504
-        },
-        "data/sample.3.csv": {
-            "type": "text/csv",
-            "name": "sample-3",
-            "md5": "2BOg+ssnHemhedvIVzNv/g==",
-            "package": "mexican-budget-samples",
-            "length": 50547
-        },
-        "data/sample.5.csv": {
-            "type": "text/csv",
-            "name": "sample-5",
-            "md5": "PKqqmmNf88LXaC2kv1h7rQ==",
-            "package": "mexican-budget-samples",
-            "length": 50795
-        },
-        "data/sample.2.csv": {
-            "type": "text/csv",
-            "name": "sample-2",
-            "md5": "fLlospGDQB2c/deTJUulLg==",
-            "package": "mexican-budget-samples",
-            "length": 50666
-        }
-    },
     "metadata": {
         "owner": "5df4a7b06a940c992d1c44525daff47b",
         "name": "mexican-budget-samples"
+    },
+    "filedata": {
+        "data/sample.4.csv": {
+            "type": "text/csv",
+            "package": "mexican-budget-samples",
+            "md5": "EJ2oF6Wluw4h3EjMtt7s9Q==",
+            "length": 51166,
+            "name": "sample-4"
+        },
+        "data/sample.8.csv": {
+            "type": "text/csv",
+            "package": "mexican-budget-samples",
+            "md5": "2QvGPFA6WDwfw5SuqMpqaA==",
+            "length": 49612,
+            "name": "sample-8"
+        },
+        "data/sample.9.csv": {
+            "type": "text/csv",
+            "package": "mexican-budget-samples",
+            "md5": "ubFroOAeno5P3UyUS5tZbQ==",
+            "length": 51759,
+            "name": "sample-9"
+        },
+        "data/sample.3.csv": {
+            "type": "text/csv",
+            "package": "mexican-budget-samples",
+            "md5": "2BOg+ssnHemhedvIVzNv/g==",
+            "length": 50547,
+            "name": "sample-3"
+        },
+        "data/sample.1.csv": {
+            "type": "text/csv",
+            "package": "mexican-budget-samples",
+            "md5": "+uqBmwvQLi0M2W2enNxD/A==",
+            "length": 50556,
+            "name": "sample-1"
+        },
+        "data/sample.5.csv": {
+            "type": "text/csv",
+            "package": "mexican-budget-samples",
+            "md5": "PKqqmmNf88LXaC2kv1h7rQ==",
+            "length": 50795,
+            "name": "sample-5"
+        },
+        "data/sample.7.csv": {
+            "type": "text/csv",
+            "package": "mexican-budget-samples",
+            "md5": "0fOHGvO6eMvclzIxRAzLjQ==",
+            "length": 50504,
+            "name": "sample-7"
+        },
+        "data/sample.6.csv": {
+            "type": "text/csv",
+            "package": "mexican-budget-samples",
+            "md5": "giuo0Eib+70fKBkTSgwnNQ==",
+            "length": 50153,
+            "name": "sample-6"
+        },
+        "data/sample.2.csv": {
+            "type": "text/csv",
+            "package": "mexican-budget-samples",
+            "md5": "fLlospGDQB2c/deTJUulLg==",
+            "length": 50666,
+            "name": "sample-2"
+        }
     }
 }

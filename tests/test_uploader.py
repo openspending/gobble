@@ -8,12 +8,12 @@ from __future__ import absolute_import
 from future import standard_library
 from pytest import mark
 
-from gobble.settings import GOBBLE_MODE
+from gobble.configuration import GOBBLE_MODE
 # noinspection PyUnresolvedReferences
 from tests.fixtures import mock_package, mock_user, permissions
-from gobble.uploader import Batch
+from gobble.upload import Batch
 from tests.parameters import s3_bucket_test_cases
-from gobble.api import request_upload_urls
+from gobble.api import request_upload
 
 standard_library.install_aliases()
 
@@ -28,8 +28,8 @@ def test_request_upload_urls_returns_correct_json(mock_user,
     # I'm leaving it here as a reminder.
     mock_user.permissions = permissions
     batch = Batch(mock_user, mock_package)
-    response = batch._request_upload_urls()
-    assert response.json() == request_upload_urls.snapshot['response_json']
+    response = batch.request_s3_upload()
+    assert response.description() == request_upload.snapshot['response_json']
 
 
 # noinspection PyShadowingNames
@@ -39,5 +39,5 @@ def test_s3_bucket_urls_are_parsed_correctly(upload_url,
                                              mock_user,
                                              mock_package):
     batch = Batch(mock_user, mock_package)
-    batch.upload_urls = {'foo': upload_url}
+    batch.urls = {'foo': upload_url}
     assert batch.s3_bucket == s3_bucket_url

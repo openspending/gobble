@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from builtins import str
+from requests import HTTPError
 from requests import Session
 from urllib.parse import (urlencode,
                           urljoin,
@@ -13,47 +14,57 @@ from urllib.parse import (urlencode,
                           urlsplit)
 
 from gobble.configuration import settings
-from gobble.snapshot import SnapShot
+from gobble.logger import log
+from gobble.snapshot import SnapShot, to_json
+
+# One session for all queries
+_session = Session()
 
 
 class EndPoint(object):
-    """This class represents an API endpoint"""
+    """An API endpoint served by the os-conductor app"""
 
-    _session = Session()
+    def __init__(self, method, *path,
+                 trailing_slash=False,
+                 session=_session):
 
-    def __init__(self, method, *path, trailing_slash=False):
         self.has_slash = trailing_slash
         self.method = method
         self._path = path
+        self._session = session
+        self.snapshot = None
 
     @property
-    def target(self):
+    def fire(self):
+        return getattr(self._session, self.method.lower())
+
+    @property
+    def url(self):
         return urljoin(settings.OS_URL, '/'.join(self.path))
 
     @property
     def path(self):
-        # Deal with trailing slashes
+        """Deal with trailing slashes
+        """
         path = list(self._path)
         if self.has_slash:
             path[-1] += '/'
         return path
 
-    def _build_url(self, params):
-        """Encode the query string"""
+    def _append(self, params):
+        """Encode the query string and append it to the endpoint
+        """
         query = urlencode(tuple(params.items()))
-        parts = urlsplit(self.target)._replace(query=query)
+        parts = urlsplit(self.url)._replace(query=query)
         return urlunsplit(parts)
 
-    def __call__(self, **kwargs):
-        """Fire, take a snapshot and return the response"""
-        fire = getattr(self._session, self.method.lower())
-
-        params = kwargs.pop('params')
-        request_url = self._build_url(params) if params else self.target
-        response = fire(request_url, **kwargs)
-        info = request_url, response, params
-
-        SnapShot(self, *info, **kwargs)
+    def __call__(self, params=None, **request):
+        """Fire, take a snapshot and return the response
+        """
+        request_url = self._append(params) if params else self.url
+        response = self.fire(request_url, **request)
+        summary = request_url, response, params
+        self.snapshot = SnapShot(self, *summary, **request)
         return response
 
     def __str__(self):
@@ -62,12 +73,13 @@ class EndPoint(object):
     def __repr__(self):
         return '<EndPoint ' + str(self) + '>'
 
-    def __dict__(self):
+    @property
+    def info(self):
         return {
             'method': self.method,
             'path': self.path,
             'endslash': self.has_slash,
-            "url": self.target
+            "url": self.url
         }
 
 
@@ -77,8 +89,23 @@ authenticate_user = EndPoint('GET', 'user', 'check')
 authorize_user = EndPoint('GET', 'user', 'authorize')
 oauth_callback = EndPoint('GET', 'oauth', 'callback')
 update_user = EndPoint('POST', 'user', 'update')
-search_users = EndPoint('GET', 'search', 'user')
 search_packages = EndPoint('GET', 'search', 'package')
 upload_package = EndPoint('POST', 'datastore', 'upload')
-request_upload_urls = EndPoint('POST', 'datastore', trailing_slash=True)
+request_upload = EndPoint('POST', 'datastore', trailing_slash=True)
 # -----------------------------------------------------------------------------
+
+
+def handle(response):
+    """Handle a response and return its payload
+
+    If all is okay, return the json payload of the response
+    as a dict. If the status code is in the range 400 to 599,
+    raise an HTTPError.
+    """
+    try:
+        response.raise_for_status()
+    except HTTPError as error:
+        log.error(error)
+        raise error
+
+    return to_json(response)
