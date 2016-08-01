@@ -5,20 +5,18 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import io
 from json import loads
 from os import makedirs
 from os.path import join, expanduser
 from shutil import rmtree
 from unittest.mock import patch
+
 from future import standard_library
 from pytest import fixture
-from pytest import yield_fixture
-from requests_mock import Mocker
-import io
 
-from gobble.configuration import settings, GOBBLE_MODE, DUMMY_DIR, \
-    SNAPSHOTS_DIR
-from gobble.logger import log
+from gobble.configuration import settings, GOBBLE_MODE
+from gobble.configuration import ROOT_DIR
 
 standard_library.install_aliases()
 
@@ -35,28 +33,6 @@ if GOBBLE_MODE not in ('Testing', 'Development'):
         'or bad things will happen and you will hate yourself'
     )
     raise BadTestingConfiguration(sanity)
-
-if settings.FREEZE_MODE:
-    sanity = (
-        "You can't run tests with FREEZE_MODE = True"
-    )
-    raise BadTestingConfiguration(sanity)
-
-
-# Mock API responses
-# -----------------------------------------------------------------------------
-@yield_fixture(scope='session')
-def mock_requests():
-    """Toggle mock requests ON/OFF."""
-
-    request_type = 'mock' if settings.MOCK_MODE else 'real'
-    log.debug('Sending %s requests', request_type)
-
-    if settings.MOCK_MODE:
-        with Mocker() as mock:
-            yield mock
-    else:
-        yield None
 
 
 # Fake the user's local set-up
@@ -82,6 +58,9 @@ def tmp_user_dir(request):
 
 # User authentication and permission
 # -----------------------------------------------------------------------------
+DUMMY_DIR = join(ROOT_DIR, 'assets', 'dummy')
+
+
 @fixture
 def token():
     filepath = join(DUMMY_DIR, 'token.json')
@@ -91,7 +70,7 @@ def token():
 
 @fixture
 def permissions():
-    filepath = join(DUMMY_DIR, 'permissions.json')
+    filepath = join('', 'permissions.json')
     with io.open(filepath) as file:
         return loads(file.read())
 
@@ -104,7 +83,7 @@ def mock_package():
     package.descriptor = {'name': 'mexican-budget-samples'}
     snapshot_file = join(SNAPSHOTS_DIR, 'POST.datastore.json')
     with io.open(snapshot_file) as file:
-        package.payload = loads(file.read())['request_json']
+        package.description = loads(file.read())['request_json']
     return package
 
 

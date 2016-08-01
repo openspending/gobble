@@ -17,13 +17,32 @@ from os.path import getsize, join
 from base64 import b64encode
 from hashlib import md5
 
-from gobble.api import upload_package, request_upload
-from gobble.configuration import settings, OS_DATA_FORMATS
+from gobble.api import handle, upload_package, request_upload
+from gobble.configuration import settings
 from gobble.logger import log
-from gobble.utilities import gob
 from gobble.user import User
 
 standard_library.install_aliases()
+
+
+OS_DATA_FORMATS = ['csv']
+
+
+def report_validation_errors(package):
+    """Iterate over validation errors a datapackage."""
+
+    name = package.descriptor['name']
+    messages = []
+
+    log.debug('{:*^100}'.format(' Validating %s ' % name))
+
+    for error in package.iter_errors():
+        messages.append(error.message)
+        log.warn(error.message)
+
+    log.debug('{:*^100}'.format(' End of validation '))
+
+    return messages
 
 
 class DataFile(object):
@@ -33,7 +52,7 @@ class DataFile(object):
     info required to request an upload to S3. As a bonus it provides
     a PETL Table object with handy diagnostic and viewing capabilities.
     """
-    block_size = settings.HASHING_BLOCK_SIZE
+    HASHING_BLOCK_SIZE = 65536
 
     def __init__(self, resource):
         self._descriptor = resource.descriptor
@@ -59,10 +78,10 @@ class DataFile(object):
         hasher = md5()
 
         with io.open(self.absolute_path, 'rb') as stream:
-            chunk = stream.read(self.block_size)
+            chunk = stream.read(self.HASHING_BLOCK_SIZE)
             while len(chunk) > 0:
                 hasher.update(chunk)
-                chunk = stream.read(self.block_size)
+                chunk = stream.read(self.HASHING_BLOCK_SIZE)
 
         md5_binary = hasher.digest()
         md5_bytes = b64encode(md5_binary)
@@ -154,7 +173,7 @@ class Batch(object):
             }
         }
 
-    def get_upload_details(self):
+    def yield_upload_details(self):
         """Yield the information needed to upload a file to S3"""
 
         details = zip(self.paths, self.urls, self.queries, self.headers)
@@ -179,7 +198,7 @@ class Batch(object):
 
         query = dict(jwt=self.token)
         response = request_upload(params=query, json=self.payload)
-        s3_targets = gob(response)['filedata']
+        s3_targets = handle(response)['filedata']
         self._unwrap_s3_targets(s3_targets)
 
         message = '%s is ready for upload: %s'
@@ -214,7 +233,7 @@ class Batch(object):
         return True if item in self.paths else False
 
 
-class S3Bucket(object):
+class Bucket(object):
     def __init__(self, batch):
         self.session = FuturesSession()
         self.batch = batch
@@ -233,7 +252,7 @@ class S3Bucket(object):
     def start_uploads(self):
         """Queue data files for upload to the S3 bucket
         """
-        for path, url, query, headers in self.batch.get_upload_details():
+        for path, url, query, headers in self.batch.yield_upload_details():
             log.debug('Started uploading %s to %s', path, url)
 
             absolute_path = join(self.batch.package.base_path, path)
@@ -259,7 +278,7 @@ class S3Bucket(object):
 
     @staticmethod
     def _notify_s3_success(_, response):
-        return gob(response)
+        return handle(response)
 
     def _close_file_streams(self):
         for stream in self.streams:
@@ -270,19 +289,19 @@ class S3Bucket(object):
         """Load a datapackage into the postgres datastore
         """
         response = upload_package(params=self.permission)
-        return gob(response)
+        return handle(response)
 
     def __repr__(self):
-        return self.batch.__repr__().replace('Batch', 'S3Bucket')
+        return self.batch.__repr__().replace('Batch', 'Bucket')
 
     def __str__(self):
-        return self.batch.__str__().replace('Batch', 'S3Bucket')
+        return self.batch.__str__().replace('Batch', 'Bucket')
 
     def poll(self):
         """Check the upload status of a datapackage
         """
         response = upload_package(params=self.permission)
-        return gob(response)
+        return handle(response)
 
 if __name__ == '__main__':
     u = User()
@@ -291,5 +310,5 @@ if __name__ == '__main__':
     b = Batch(dp, u)
     b.request_s3_upload()
 
-    s3 = S3Bucket(b)
+    s3 = Bucket(b)
     s3.start_uploads()

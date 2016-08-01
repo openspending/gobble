@@ -1,12 +1,14 @@
 """Parameters for paramtrized tests are defined here"""
 
-
 from gobble.configuration import Production, Development, Testing
+from gobble.api import (request_upload, search_packages, update_user,
+                        authorize_user, authenticate_user, oauth_callback)
 
 
 # -----------------------------------------------------------------------------
 configurations = [Production, Development, Testing]
 # -----------------------------------------------------------------------------
+
 
 # -----------------------------------------------------------------------------
 _upload_urls = [
@@ -35,13 +37,17 @@ s3_bucket_test_cases = list(zip(_upload_urls, _s3_bucket_urls))
 
 
 # -----------------------------------------------------------------------------
-api_enpoints = [
-    ('GET.user.authorize', '/user/authorize', 'GET'),
-    ('GET.oauth.callback', '/oauth/callback', 'GET'),
-    ('POST.user.update', '/user/update', 'POST'),
-    ('GET.search.user', '/search/user', 'GET'),
-    ('GET.search.package', '/search/package', 'GET'),
-    ('request_upload', '/datastore/', 'POST')
+api_calls = (
+    authenticate_user,
+    authorize_user,
+    oauth_callback,
+    update_user,
+    search_packages,
+    request_upload,
+)
+endpoints = [
+    ('foo', ['spam', 'eggs/']),
+    ('bar', ['1', '2'])
 ]
 # -----------------------------------------------------------------------------
 

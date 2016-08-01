@@ -4,25 +4,38 @@
 from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime
-from json import loads
+from json import loads, dumps
 from os import listdir
 from os.path import join, isdir
 from re import search
 
 import io
 
+from gobble.configuration import ROOT_DIR
+
+try:
+    from json import JSONDecodeError
+except ImportError:
+    JSONDecodeError = ValueError
+
 from gobble.logger import log
-from gobble.utilities import wopen23, dumps23, to_json
-from gobble.configuration import settings, SNAPSHOTS_DIR
+from gobble.configuration import settings
+
+
+SNAPSHOTS_DIR = join(ROOT_DIR, 'assets', 'snapshots')
+
+
+def to_json(response):
+    """Safely extract the payload from the response object"""
+    try:
+        return response.json()
+    except JSONDecodeError:
+        return {}
 
 
 class SnapShot(OrderedDict):
-    """A chatty wrapper around the API transaction
+    """A chatty wrapper around the API transaction"""
 
-    In freeze mode, the snapshot gets stripped of its secrets
-    and saved inside the repo. So freeze mode is a cheap way
-    to generate (quasi) specs for the API.
-    """
     def __init__(self, endpoint, url, reponse, params,
                  headers=None, json=None, is_freeze=False):
         """Log, record and save before returning an instance"""
@@ -70,7 +83,7 @@ class SnapShot(OrderedDict):
             log.debug(*message)
 
         if settings.EXPANDED_LOG_STYLE:
-            log.debug(dumps23(response_json))
+            log.debug(dumps(response_json, ensure_ascii=False))
 
         log.debug('{:*^100}'.format(transaction % end))
 
@@ -79,9 +92,6 @@ class SnapShot(OrderedDict):
 
         json = to_json(self.response)
         duplicate_json = deepcopy(json)
-
-        if settings.FREEZE_MODE:
-            freeze(duplicate_json)
 
         self['timestamp'] = self.timestamp
         self['url'] = self.url
@@ -110,8 +120,8 @@ class SnapShot(OrderedDict):
 
     def _save(self):
         """Save the snapshot as JSON in the appropriate place"""
-        with wopen23(self._filepath) as file:
-            file.write(dumps23(self))
+        with io.open(self._filepath, 'w+', encoding='utf-8') as file:
+            file.write(dumps(self, ensure_ascii=False))
         log.debug('Saved request + response to %s', self._filepath)
 
     @property
@@ -134,7 +144,7 @@ class SnapShot(OrderedDict):
 
     @property
     def json(self):
-        return dumps23(self)
+        return dumps(self, ensure_ascii=False)
 
 
 def freeze(json):
@@ -176,7 +186,7 @@ def freeze(json):
                     freeze(value)
 
 
-def freeze_and_archive(destination):
+def archive(destination):
     """Freeze and move all snapshots to the destination folder."""
 
     if not isdir(destination):
@@ -186,11 +196,16 @@ def freeze_and_archive(destination):
         verb = file.split('.')[0]
         if verb in ['GET', 'POST', 'PUT']:
 
-            with io.open(file) as in_:
-                snapshot = loads(in_.read())
+            with io.open(file) as source:
+                snapshot = loads(source.read())
 
             freeze(snapshot)
 
-            # Overwtite if necessary
-            with wopen23(join(destination, file)) as out:
-                out.write(dumps23(snapshot))
+            # Overwrite if necessary
+            output = join(destination, file)
+            with io.open(output, 'w+', encoding='utf-8') as target:
+                target.write(dumps(snapshot, ensure_ascii=False))
+
+
+if __name__ == '__main__':
+    archive('/home/loic')
