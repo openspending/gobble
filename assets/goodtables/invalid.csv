@@ -1,0 +1,5 @@
+id,name,description,amount
+A3001,Taxes,Taxes we collect,10000.00
+A5032,Parking Fees,Parking fees we collect,2000.00
+,,,
+A5032,Management Fees,Management feeds we collect,7500.00,Some notes about this
