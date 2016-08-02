@@ -3,10 +3,8 @@
 from click import command
 
 from gobble.api import search_packages, handle
-from gobble.user import User
+from gobble.user import user
 
-
-user = User()
 
 SEARCH_KEYS = ['q', 'size', 'title', 'author', 'description',
                'regionCode', 'countryCode', 'cityCode']
