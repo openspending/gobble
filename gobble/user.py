@@ -6,7 +6,6 @@ from __future__ import division
 from __future__ import absolute_import
 
 import io
-import re
 
 from builtins import dict
 from future import standard_library
@@ -26,6 +25,7 @@ from gobble.api import (handle,
 
 standard_library.install_aliases()
 
+
 OS_SERVICES = ['os.datastore']
 TOKEN_FILE = join(settings.USER_DIR, 'token.json')
 PERMISSIONS_FILE = join(settings.USER_DIR, 'permission.json')
@@ -37,9 +37,21 @@ class TokenExpired(Exception):
 
 
 class User(object):
-    """A contributor on the Open-Spending platform."""
+    """A contributor on Open-Spending.
+
+    Note: you don't need to instantiate or even import this class yourself.
+    The correlation is that Gobble only supports a single user for now.
+
+    If you use Gobble for the first time, run the :method:`user.start` function
+    first. It will help you obtain your authentication token. Open-Spending
+    uses Google OAuth2, so you will need a valid Google email to make it work.
+
+    Logs, tokens, permissions and snapshots of the latest API requests are
+    saved in the user directory, which by default is :data:`~/.gobble`.
+    """
 
     def __init__(self):
+        self.folder = settings.USER_DIR
         self.token = self._uncache_token()
         self.authentication = self._request_authentication()
         self.permissions = self._request_permissions()
@@ -47,12 +59,17 @@ class User(object):
 
     @staticmethod
     def _uncache_token():
+        """Read the token from the cache.
+        """
         with io.open(TOKEN_FILE) as cache:
             json = loads(cache.read())
             log.debug('Your token is %s', json['token'])
+
             return json['token']
 
     def _request_authentication(self):
+        """Ask Open-Spending if the token is valid.
+        """
         query = dict(jwt=self.token)
         response = authenticate_user(params=query)
         authentication = handle(response)
@@ -63,11 +80,12 @@ class User(object):
             log.error(message)
             raise TokenExpired(message)
 
-        log.info('Hello %s! You are logged in Open-Spending', self)
-
+        log.info('Hello %s! You are logged into Open-Spending', self)
         return authentication
 
     def _request_permissions(self):
+        """Request permissions for Open-Spending services.
+        """
         permissions = {}
 
         for service in OS_SERVICES:
@@ -86,7 +104,7 @@ class User(object):
 
 
 class LocalHost(SimpleHTTPRequestHandler):
-    """A local server to catch and save the token"""
+    """A local server to catch and save the token."""
 
     def do_GET(self):
         log.debug('Callback received: %s', self.path)
@@ -98,9 +116,13 @@ class LocalHost(SimpleHTTPRequestHandler):
                 log.info('Saved your token in %s', TOKEN_FILE)
 
 
-# @command(name='start')
-def create_user():
-    """Get the new user a token and cache """
+def start():
+    """Obtain the new user a token.
+
+    Open-Spending uses Google OAuth2 for authentication, so you will need a
+    valid Google email address to make this work. When you click on the link
+    provided, you will be redirected to your browser to sign up. That's it.
+    """
 
     def install_user_folder():
         try:
@@ -116,8 +138,8 @@ def create_user():
         new_thread = Thread(target=listen_for_token)
         prompt_user(authorization)
         local_server = new_thread.run()
-
         local_server.join()
+        log.info('Well done, you have a now token!')
 
     def prompt_user(authorization):
         sign_up_url = authorization['providers']['google']['url']
@@ -145,7 +167,10 @@ def create_user():
     )
     for info in cached_info:
         cache(*info)
+        log.debug('Cached %s to %s', *info)
 
     return user_
 
+
+# Expose a user object for use in other modules
 user = User()

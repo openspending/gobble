@@ -11,7 +11,7 @@ SEARCH_KEYS = ['q', 'size', 'title', 'author', 'description',
 
 
 @command(name='pull')
-def elascticsearch(query, private=True, size=None):
+def pull(query, private=True, size=None):
     """Query the ElasticSearch database.
 
     You can search a package by `title`, `author`, `description`, `regionCode`,

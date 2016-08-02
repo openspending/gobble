@@ -17,6 +17,7 @@ from gobble.configuration import settings
 from gobble.logger import log
 from gobble.snapshot import SnapShot, to_json
 
+
 # One session for all queries
 _session = Session()
 
