@@ -9,7 +9,6 @@ import io
 from base64 import b64encode
 from hashlib import md5
 from os.path import getsize, join
-from sys import stdout
 from time import sleep
 
 from datapackage import DataPackage
@@ -20,16 +19,16 @@ from pip.utils import cached_property
 from requests import HTTPError
 from requests_futures.sessions import FuturesSession
 
+from gobble.logger import log
+from gobble.user import user
 from gobble.api import (handle, upload_package, request_upload,
                         toggle_publish, upload_status)
-from gobble.logger import log
-from gobble.user import User
 
 standard_library.install_aliases()
 
 
+HASHING_BLOCK_SIZE = 65536
 OS_DATA_FORMATS = ['csv']
-user = User()
 
 
 def upload_datapackage(filepath, publish=True):
@@ -60,11 +59,13 @@ def upload_datapackage(filepath, publish=True):
         toggle_public_access(batch.name)
 
 
-def toggle_public_access(package_id, public=True):
+def toggle_public_access(package_name, public=True):
     to_state = 'public' if public else 'private'
 
-    token = user.permissions['os.datastore']
-    query = dict(jwt=token, id=package_id, public=public)
+    toggle = str(public).lower()
+    token = user.permissions['os.datastore']['token']
+    package_id = user.authentication['profile']['idhash'] + ':' + package_name
+    query = dict(jwt=token, id=package_id, publish=toggle)
     answer = handle(toggle_publish(params=query))
 
     if not answer['success']:
@@ -208,6 +209,39 @@ class OSResource(object):
         return fromcsv(self.absolute_path)
 
 
+def describe_file(filepath, name, mediatype='json'):
+    """Return required information for S3 upload"""
+
+    def compute_hash(filepath_):
+        hasher = md5()
+
+        with io.open(filepath_, 'rb') as stream:
+            chunk = stream.read(HASHING_BLOCK_SIZE)
+            while len(chunk) > 0:
+                hasher.update(chunk)
+                chunk = stream.read(HASHING_BLOCK_SIZE)
+
+        md5_binary = hasher.digest()
+        md5_bytes = b64encode(md5_binary)
+        md5_unicode = md5_bytes.decode('utf-8')
+
+        return md5_unicode
+
+    length = getsize(filepath)
+    hash_ = compute_hash(filepath)
+    header = {
+        'Content-Length': length,
+        'Content-MD5': hash(filepath)
+        }
+    info = {
+            'name': name,
+            'length': length,
+            'md5': hash_,
+            'type': mediatype,
+        }
+    return header, info
+
+
 class Batch(object):
     """This class uploads a datdpackage to the datastore."""
 
@@ -218,7 +252,7 @@ class Batch(object):
         package.validate()
 
         self._package = package
-        self.package_url = None
+        self._url = None
         self.datafiles = []
         self._session = FuturesSession()
         self.responses = []
@@ -240,11 +274,44 @@ class Batch(object):
             }
         }
 
+    @staticmethod
+    def _extract_package_url(url):
+        return '/'.join(url.split('/')[:6]) + '/datapackage.json'
+
+    def collect_datafiles(self):
+        """Collect all the datafiles belonging to the batch"""
+
+        for resource in self._package.resources:
+            datafile = OSResource(resource)
+            log.debug('Ingested %s into %s', datafile, self.name)
+            self.datafiles.append(datafile)
+
     def request_s3_targets(self):
         """S3 urls for uploading datafiles"""
 
-        query = dict(jwt=self.token)
-        response = request_upload(params=query, json=self.payload)
+        permission = dict(jwt=self.token)
+
+        dp_filepath = 'datapackage.json'
+        dp_header, dp_info = describe_file('/home/loic/repos/gobble/assets/datapackage/datapackage.json', self.name)
+
+        dp_payload = {
+            'filedata': {dp_filepath: dp_info},
+            'metadata': {
+                'owner': self.owner_id,
+                'name': self.name
+            }
+        }
+
+        response = request_upload(params=permission, json=dp_payload)
+        json = handle(response)['filedata']
+
+        params = json[dp_filepath]['upload_query']
+        query = {k: v[0] for k, v in params.items()}
+        url = json[dp_filepath]['upload_url']
+
+        yield url, dp_filepath, query, dp_header
+
+        response = request_upload(params=permission, json=self.payload)
         json = handle(response)['filedata']
 
         for resource in self:
@@ -256,21 +323,9 @@ class Batch(object):
             log.info(message, resource, url)
 
             # I see no way other than dissecting a datafile url
-            self.package_url = self._extract_package_url(url)
+            self._url = self._extract_package_url(url)
 
             yield url, resource.path, query, resource.header
-
-    @staticmethod
-    def _extract_package_url(url):
-        return '/'.join(url.split('/')[:6])
-
-    def collect_datafiles(self):
-        """Collect all the datafiles belonging to the batch"""
-
-        for resource in self._package.resources:
-            datafile = OSResource(resource)
-            log.debug('Ingested %s into %s', datafile, self.name)
-            self.datafiles.append(datafile)
 
     def push_to_s3(self, url, path, headers, query):
         """Send data files for upload to the S3 bucket
@@ -314,27 +369,18 @@ class Batch(object):
     def insert_into_postgres(self):
         """Upload datafiles into the postgres datastore
         """
-        query = dict(jwt=self.token, datapackage=self.package_url)
+        query = dict(jwt=self.token, datapackage=self._url)
         response = upload_package(params=query)
         return handle(response)
 
     @property
     def in_progress(self):
-        query = dict(datapackage=self.package_url)
-        response = upload_status(params=query).json()
+        query = dict(datapackage=self._url)
+        answer = upload_status(params=query).json()
+        args = answer['status'], answer['progress'], len(self)
+        log.debug('Loading (%s) %s/%s', *args)
 
-        if response.status_code == 404:
-            message = response['error']
-            answer = False
-        else:
-            message = 'status'
-            answer = True if response['progress'] == len(self) else False
-
-        stdout.flush()
-        args = message, response['progress'], len(self)
-        stdout.write('Loading (%s) %s/%s', *args)
-
-        return answer
+        return answer['status'] != 'done'
 
     def __len__(self):
         return len(self.datafiles)
