@@ -36,7 +36,7 @@ class Production(object):
 
 
 class Development(Production):
-    S3_BUCKET = '//http:fakes3/fake-bucket'
+    S3_BUCKET_URL = 'http://fakes3/fake-bucket'
     EXPANDED_LOG_STYLE = True
     CONSOLE_LOG_LEVEL = DEBUG
     FILE_LOG_LEVEL = None

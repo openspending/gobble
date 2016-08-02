@@ -6,19 +6,18 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import io
+
 from base64 import b64encode
 from hashlib import md5
-from os.path import getsize, join
+from os.path import getsize, join, basename
 from time import sleep
-
 from datapackage import DataPackage
-from datapackage.exceptions import DataPackageException, ValidationError
+from datapackage.exceptions import ValidationError
 from future import standard_library
-from petl import fromcsv
-from pip.utils import cached_property
 from requests import HTTPError
 from requests_futures.sessions import FuturesSession
 
+from gobble.configuration import settings
 from gobble.logger import log
 from gobble.user import user
 from gobble.api import (handle, upload_package, request_upload,
@@ -29,6 +28,11 @@ standard_library.install_aliases()
 
 HASHING_BLOCK_SIZE = 65536
 OS_DATA_FORMATS = ['csv']
+POLL_PERIOD = 5
+
+
+token = user.permissions['os.datastore']['token']
+owner_id = user.authentication['profile']['idhash']
 
 
 def upload_datapackage(filepath, publish=True):
@@ -39,19 +43,16 @@ def upload_datapackage(filepath, publish=True):
     :param filepath: can be `dict`, `str` or file-like object (see the docs
            for the `datapackage.DataPackage` class)
     """
-    package = DataPackage(filepath)
-    batch = Batch(package)
+    batch = Batch(filepath)
 
-    batch.collect_datafiles()
-
-    for target in batch.request_s3_targets():
+    for target in batch.request_s3_urls():
         promise = batch.push_to_s3(*target)
         batch.handle_promise(*promise)
 
     batch.insert_into_postgres()
 
     while batch.in_progress:
-        sleep(10)
+        sleep(POLL_PERIOD)
 
     log.info('Congratuations, %s was uploaded successfully!', batch)
 
@@ -63,8 +64,7 @@ def toggle_public_access(package_name, public=True):
     to_state = 'public' if public else 'private'
 
     toggle = str(public).lower()
-    token = user.permissions['os.datastore']['token']
-    package_id = user.authentication['profile']['idhash'] + ':' + package_name
+    package_id = owner_id + ':' + package_name
     query = dict(jwt=token, id=package_id, publish=toggle)
     answer = handle(toggle_publish(params=query))
 
@@ -114,225 +114,105 @@ def check_datapackage_schema(filepath, raise_error=True):
             return messages
 
 
-class OSResource(object):
-    """A wrapper around the datapackage Resource class.
+def compute_hash(filepath):
+    """Return the md5 hash of a file"""
+    hasher = md5()
 
-    The class computes the md5 hash of the datafile and exposes the
-    info required to request an upload to S3. As a bonus it provides
-    a PETL Table object with handy diagnostic and viewing capabilities.
-    """
-    HASHING_BLOCK_SIZE = 65536
-
-    # TODO: subclass the `datapackage.Resource` class
-    # TODO: Run the resource through Goodtables ?
-
-    def __init__(self, resource):
-        self._descriptor = resource.descriptor
-        self._stream = None
-
-        self.absolute_path = resource.local_data_path
-        self.format = self._descriptor['format']
-        self.path = self._descriptor['path']
-        self.name = self._descriptor['name']
-        self.mediatype = self._descriptor['mediatype']
-
-        if self.format not in OS_DATA_FORMATS:
-            msg = 'Gobble does yet support %s'
-            raise NotImplemented(msg % self.format)
-
-        if resource.remote_data_path:
-            msg = 'Gooble does not support remote data files'
-            raise NotImplemented(msg)
-
-        log.debug('Hashed %s', self.info)
-
-    @property
-    def hash(self):
-        hasher = md5()
-
-        with io.open(self.absolute_path, 'rb') as stream:
-            chunk = stream.read(self.HASHING_BLOCK_SIZE)
-            while len(chunk) > 0:
-                hasher.update(chunk)
-                chunk = stream.read(self.HASHING_BLOCK_SIZE)
-
-        md5_binary = hasher.digest()
-        md5_bytes = b64encode(md5_binary)
-        md5_unicode = md5_bytes.decode('utf-8')
-
-        return md5_unicode
-
-    @property
-    def bytes(self):
-        # Sanity check for people who fiddle with files and descriptors
-        if self._descriptor['bytes'] != getsize(self.absolute_path):
-            msg = 'Specs does not match file contents: %s'
-            raise DataPackageException(msg % self._descriptor)
-        else:
-            return self._descriptor['bytes']
-
-    @property
-    def header(self):
-        """The request header for the upload"""
-        return {
-            'Content-Length': self.bytes,
-            'Content-MD5': self.hash
-        }
-
-    @property
-    def info(self):
-        """The fields required to obtain an upload url"""
-        return {
-            'name': self.name,
-            'length': self.bytes,
-            'md5': self.hash,
-            'type': self.mediatype,
-        }
-
-    def __str__(self):
-        return self.path
-
-    def __repr__(self):
-        params = {'path': str(self), 'size': self.bytes}
-        return '<OSResource [{size} bytes]: {path}>'.format(**params)
-
-    @cached_property
-    def table(self):
-        """A PETL Table object (http://petl.readthedocs.io)
-
-        This object is especially useful in the python shell
-        and the notebook: it has nide tabular text and html
-        representation built in. Just type the name of the variable
-        to show the table. It also has nifty tools to inspect the data.
-        """
-        # PETL supports other common formarts if needed
-        return fromcsv(self.absolute_path)
-
-
-def describe_file(filepath, name, mediatype='json'):
-    """Return required information for S3 upload"""
-
-    def compute_hash(filepath_):
-        hasher = md5()
-
-        with io.open(filepath_, 'rb') as stream:
+    with io.open(filepath, 'rb') as stream:
+        chunk = stream.read(HASHING_BLOCK_SIZE)
+        while len(chunk) > 0:
+            hasher.update(chunk)
             chunk = stream.read(HASHING_BLOCK_SIZE)
-            while len(chunk) > 0:
-                hasher.update(chunk)
-                chunk = stream.read(HASHING_BLOCK_SIZE)
 
-        md5_binary = hasher.digest()
-        md5_bytes = b64encode(md5_binary)
-        md5_unicode = md5_bytes.decode('utf-8')
+    md5_binary = hasher.digest()
+    md5_bytes = b64encode(md5_binary)
+    md5_unicode = md5_bytes.decode('utf-8')
 
-        return md5_unicode
-
-    length = getsize(filepath)
-    hash_ = compute_hash(filepath)
-    header = {
-        'Content-Length': length,
-        'Content-MD5': hash(filepath)
-        }
-    info = {
-            'name': name,
-            'length': length,
-            'md5': hash_,
-            'type': mediatype,
-        }
-    return header, info
+    return md5_unicode
 
 
-class Batch(object):
+class Batch(DataPackage):
     """This class uploads a datdpackage to the datastore."""
 
-    # TODO: subclass the `datapackage.DataPackage` class
+    def __init__(self, filepath):
+        super(Batch, self).__init__(filepath, schema='fiscal')
 
-    def __init__(self, package):
-        # Fail if the package is not valid
-        package.validate()
+        self.validate()
+        self.check_file_formats()
 
-        self._package = package
-        self._url = None
-        self.datafiles = []
-        self._session = FuturesSession()
         self.responses = []
-
-        self.name = package.descriptor['name']
-        self.token = user.permissions['os.datastore']['token']
-        self.owner_id = user.authentication['profile']['idhash']
+        self._session = FuturesSession()
+        self.name = self.descriptor['name']
+        self.path = basename(filepath)
+        self.filepath = filepath
 
         log.info('Starting uploading process for %s', self)
 
+    def check_file_formats(self):
+        for resource in self:
+            if resource.descriptor['mediatype'] != 'text/csv':
+                message = 'Usupported format: %s, valid formats are %s'
+                raise NotImplemented(message, resource.path, OS_DATA_FORMATS)
+
     @property
-    def payload(self):
+    def files(self):
+        filedata = {
+            resource.descriptor['path']: {
+                'name': resource.descriptor['name'],
+                'length': getsize(resource.local_data_path),
+                'md5': compute_hash(resource.local_data_path),
+                'type': resource.descriptor['mediatype'],
+            } for resource in self
+        }
+        descriptor_file = {
+            basename(self.filepath): {
+                'name': self.name,
+                'length': getsize(self.filepath),
+                'md5': compute_hash(self.filepath),
+                'type': 'text/json',
+            }
+        }
+        filedata.update(descriptor_file)
         return {
-            'filedata': {datafile.path: datafile.info
-                         for datafile in self.datafiles},
+            'filedata': filedata,
             'metadata': {
-                'owner': self.owner_id,
+                'owner': owner_id,
                 'name': self.name
             }
         }
 
-    @staticmethod
-    def _extract_package_url(url):
-        return '/'.join(url.split('/')[:6]) + '/datapackage.json'
+    def get_header(self, path):
+        """The request header for the upload.
+        """
+        filepath = join(self.base_path, path)
+        return {
+            'Content-Length': getsize(filepath),
+            'Content-MD5': compute_hash(filepath)
+        }
 
-    def collect_datafiles(self):
-        """Collect all the datafiles belonging to the batch"""
+    @property
+    def package_url(self):
+        return join(settings.S3_BUCKET_URL, owner_id, self.name, self.path)
 
-        for resource in self._package.resources:
-            datafile = OSResource(resource)
-            log.debug('Ingested %s into %s', datafile, self.name)
-            self.datafiles.append(datafile)
-
-    def request_s3_targets(self):
+    def request_s3_urls(self):
         """S3 urls for uploading datafiles"""
 
-        permission = dict(jwt=self.token)
+        response = request_upload(params=dict(jwt=token), json=self.files)
+        files = handle(response)['filedata']
 
-        dp_filepath = 'datapackage.json'
-        dp_header, dp_info = describe_file('/home/loic/repos/gobble/assets/datapackage/datapackage.json', self.name)
+        for path, info in files.items():
+            query = {k: v[0] for k, v in info['upload_query'].items()}
+            message = '%s is ready for upload to %s'
+            log.info(message, path, info['upload_url'])
 
-        dp_payload = {
-            'filedata': {dp_filepath: dp_info},
-            'metadata': {
-                'owner': self.owner_id,
-                'name': self.name
-            }
-        }
-
-        response = request_upload(params=permission, json=dp_payload)
-        json = handle(response)['filedata']
-
-        params = json[dp_filepath]['upload_query']
-        query = {k: v[0] for k, v in params.items()}
-        url = json[dp_filepath]['upload_url']
-
-        yield url, dp_filepath, query, dp_header
-
-        response = request_upload(params=permission, json=self.payload)
-        json = handle(response)['filedata']
-
-        for resource in self:
-            params = json[resource.path]['upload_query']
-            query = {k: v[0] for k, v in params.items()}
-            url = json[resource.path]['upload_url']
-
-            message = '%s is ready for upload: %s'
-            log.info(message, resource, url)
-
-            # I see no way other than dissecting a datafile url
-            self._url = self._extract_package_url(url)
-
-            yield url, resource.path, query, resource.header
+            yield info['upload_url'], path, query, self.get_header(path)
 
     def push_to_s3(self, url, path, headers, query):
-        """Send data files for upload to the S3 bucket
+        """Send data files for upload to the S3 bucket.
         """
         log.debug('Started uploading %s to %s', path, url)
 
-        absolute_path = join(self._package.base_path, path)
+        absolute_path = join(self.base_path, path)
         stream = io.open(absolute_path, mode='rb')
         future = self._session.put(url,
                                    headers=headers,
@@ -344,8 +224,8 @@ class Batch(object):
 
     @staticmethod
     def _s3_callback(_, response):
-        """Report a succesfully S3 upload or fail """
-        # Will raise an HTTPError if 400 < code < 599:
+        """Report a succesfully S3 upload or fail.
+        """
         handle(response)
         log.info('Successful S3 upload: %s', response.url)
 
@@ -355,7 +235,6 @@ class Batch(object):
         exception = future.exception()
         if exception:
             raise exception
-
         response = future.result()
 
         if response.status_code != 200:
@@ -367,23 +246,25 @@ class Batch(object):
         stream.close()
 
     def insert_into_postgres(self):
-        """Upload datafiles into the postgres datastore
+        """Transfer datafiles from S3 into the postgres datastore.
         """
-        query = dict(jwt=self.token, datapackage=self._url)
+        query = dict(jwt=token, datapackage=self.package_url)
         response = upload_package(params=query)
         return handle(response)
 
     @property
     def in_progress(self):
-        query = dict(datapackage=self._url)
+        """Return true when the upload status is 'done'.
+        """
+        query = dict(datapackage=self.package_url)
         answer = upload_status(params=query).json()
-        args = answer['status'], answer['progress'], len(self)
-        log.debug('Loading (%s) %s/%s', *args)
+        args = self, answer['status'], answer['progress'], len(self)
+        log.debug('%s is loading (%s) %s/%s', *args)
 
         return answer['status'] != 'done'
 
     def __len__(self):
-        return len(self.datafiles)
+        return len(self.resources)
 
     def __repr__(self):
         return '<Batch [%s files]: %s>' % (len(self), self.name)
@@ -392,12 +273,8 @@ class Batch(object):
         return self.name
 
     def __iter__(self):
-        for datafile in self.datafiles:
+        for datafile in self.resources:
             yield datafile
 
     def __getitem__(self, index):
-        return self.datafiles[index]
-
-
-if __name__ == '__main__':
-    upload_datapackage('/home/loic/repos/gobble/assets/datapackage/datapackage.json')
+        return self.resources[index]
