@@ -6,13 +6,11 @@ from __future__ import division
 from __future__ import absolute_import
 
 import io
+import re
 
 from builtins import dict
-
-from click import command
 from future import standard_library
 from future.backports.http.server import HTTPServer, SimpleHTTPRequestHandler
-from pip.utils import cached_property
 from os.path import join
 from json import loads
 from os import mkdir
@@ -21,15 +19,17 @@ from json import dumps
 
 from gobble.logger import log
 from gobble.configuration import settings
-from gobble.api import authenticate_user, authorize_user, update_user, handle
+from gobble.api import (handle,
+                        authenticate_user,
+                        authorize_user,
+                        oauth_callback)
 
 standard_library.install_aliases()
 
-
 OS_SERVICES = ['os.datastore']
 TOKEN_FILE = join(settings.USER_DIR, 'token.json')
-PERMISSIONS_FILE = 'permission.json'
-AUTHENTICATION_FILE = 'authentication.json'
+PERMISSIONS_FILE = join(settings.USER_DIR, 'permission.json')
+AUTHENTICATION_FILE = join(settings.USER_DIR, 'authentication.json')
 
 
 class TokenExpired(Exception):
@@ -40,22 +40,19 @@ class User(object):
     """A contributor on the Open-Spending platform."""
 
     def __init__(self):
-        self.authentication = self._get_authentication()
-        self._permissions = list(self._get_permissions())
+        self.token = self._uncache_token()
+        self.authentication = self._request_authentication()
+        self.permissions = self._request_permissions()
         self.name = None
 
-    @property
-    def permissions(self):
-        return {p.get('service'): p for p in self._permissions}
-
-    @cached_property
-    def token(self):
+    @staticmethod
+    def _uncache_token():
         with io.open(TOKEN_FILE) as cache:
             json = loads(cache.read())
             log.debug('Your token is %s', json['token'])
             return json['token']
 
-    def _get_authentication(self):
+    def _request_authentication(self):
         query = dict(jwt=self.token)
         response = authenticate_user(params=query)
         authentication = handle(response)
@@ -70,12 +67,16 @@ class User(object):
 
         return authentication
 
-    def _get_permissions(self):
+    def _request_permissions(self):
+        permissions = {}
+
         for service in OS_SERVICES:
             query = dict(jwt=self.token, service=service)
             response = authorize_user(params=query)
             permission = handle(response)
-            yield permission
+            permissions.update({service: permission})
+
+            return permissions
 
     def __str__(self):
         return self.name
@@ -91,10 +92,10 @@ class LocalHost(SimpleHTTPRequestHandler):
         log.debug('Callback received: %s', self.path)
         token = self.path[6:]
 
-        with io.open(TOKEN_FILE, 'w+', encoding='utf-8') as file:
-            file.write(dumps({'token': token}, ensure_ascii=False))
-
-        log.info('Saved your token in %s', TOKEN_FILE)
+        if token:
+            with io.open(TOKEN_FILE, 'w+', encoding='utf-8') as file:
+                file.write(dumps({'token': token}, ensure_ascii=False))
+                log.info('Saved your token in %s', TOKEN_FILE)
 
 
 # @command(name='start')
@@ -109,14 +110,13 @@ def create_user():
 
     def request_new_token():
         localhost = 'http://%s:%s' % settings.LOCALHOST
-        next_url = dict(next=localhost)
-
-        response = authenticate_user(params=next_url)
+        query = dict(next=localhost, callback_url=oauth_callback.url)
+        response = authenticate_user(query)
         authorization = handle(response)
-        prompt_user(authorization)
-
         new_thread = Thread(target=listen_for_token)
+        prompt_user(authorization)
         local_server = new_thread.run()
+
         local_server.join()
 
     def prompt_user(authorization):
@@ -136,18 +136,16 @@ def create_user():
     install_user_folder()
     request_new_token()
 
-    user = User()
+    user_ = User()
 
     cached_info = (
-        (user.token, TOKEN_FILE),
-        (user._permissions, PERMISSIONS_FILE),
-        (user.authentication, AUTHENTICATION_FILE)
+        (user_.token, TOKEN_FILE),
+        (user_.permissions, PERMISSIONS_FILE),
+        (user_.authentication, AUTHENTICATION_FILE)
     )
     for info in cached_info:
         cache(*info)
 
-    return user
+    return user_
 
-
-if __name__ == '__main__':
-    u = User()
+user = User()
