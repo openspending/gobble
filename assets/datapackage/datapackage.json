@@ -239,7 +239,7 @@
     "end": "2015-12-31"
   },
   "title": "Mexican federal budget",
-  "name": "mexican-federal-budget",
+  "name": "mexican-federal-budget-test-gobble",
   "description": "This datapackage is used to test the upload module",
   "resources": [
     {

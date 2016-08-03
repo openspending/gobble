@@ -13,7 +13,7 @@ from logging import (getLogger,
                      Formatter,
                      Filter)
 
-from gobble.configuration import settings, GOBBLE_MODE
+from gobble.config import settings, GOBBLE_MODE
 
 standard_library.install_aliases()
 

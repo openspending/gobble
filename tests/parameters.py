@@ -1,6 +1,6 @@
 """Parameters for paramtrized tests are defined here"""
 
-from gobble.configuration import Production, Development
+from gobble.config import Production, Development
 from gobble.api import (request_upload, search_packages, update_user,
                         authorize_user, authenticate_user, oauth_callback)
 

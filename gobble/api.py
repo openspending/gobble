@@ -13,7 +13,7 @@ from urllib.parse import (urlencode,
                           urlunsplit,
                           urlsplit)
 
-from gobble.configuration import settings
+from gobble.config import settings
 from gobble.logger import log
 from gobble.snapshot import SnapShot, to_json
 

@@ -15,8 +15,8 @@ from unittest.mock import patch
 from future import standard_library
 from pytest import fixture
 
-from gobble.configuration import settings, GOBBLE_MODE
-from gobble.configuration import ROOT_DIR
+from gobble.config import settings, GOBBLE_MODE
+from gobble.config import ROOT_DIR
 
 standard_library.install_aliases()
 
@@ -95,7 +95,7 @@ def mock_user():
 
 @fixture
 def mock_batch():
-    return patch('gobble.uploader.Batch', autospec=True)
+    return patch('gobble.uploader.FiscalDataPackage', autospec=True)
 
 
 @fixture

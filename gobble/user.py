@@ -17,7 +17,7 @@ from threading import Thread
 from json import dumps
 
 from gobble.logger import log
-from gobble.configuration import settings
+from gobble.config import settings
 from gobble.api import (handle,
                         authenticate_user,
                         authorize_user,
@@ -116,7 +116,7 @@ class LocalHost(SimpleHTTPRequestHandler):
                 log.info('Saved your token in %s', TOKEN_FILE)
 
 
-def start():
+def create_user():
     """Obtain the new user a token.
 
     Open-Spending uses Google OAuth2 for authentication, so you will need a

@@ -17,9 +17,9 @@ try:
 except ImportError:
     JSONDecodeError = ValueError
 
-from gobble.configuration import ROOT_DIR
+from gobble.config import ROOT_DIR
 from gobble.logger import log
-from gobble.configuration import settings
+from gobble.config import settings
 
 
 SNAPSHOTS_DIR = join(ROOT_DIR, 'assets', 'snapshots')
