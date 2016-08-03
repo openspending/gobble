@@ -1,6 +1,6 @@
 # Gobble
 
-[Open-Spending](next.openspending.org) is a web platform for  provides a web-inteface to package and upload data. You can do the same thing programatically `gobble` is a both client and a command line interface  written in Python. It's compatible with versions2.7, 3.3, 3.4 and 3.5. You can install it via `pip`.
+[Open-Spending](next.openspending.org) is an international platform to package, share and visualize budget data. Gobble does exactly the same thing as the [packager module](next.openspending.org/packager), but programatically. It can be used both as python client or a command line interface. It's compatible with versions 2.7, 3.3, 3.4 and 3.5. You can install it via `pip`.
 
 ```
 pip install gobble
@@ -8,18 +8,26 @@ pip install gobble
 
 ## Fiscal Data Packages
 
-A [Datapackage](http://frictionlessdata.io/data-packages/) is a lightweight container for data. A [Fiscal Data Package](http://fiscal.dataprotocols.org/) is an open technical specification for government budget and spending data. It user-oriented and aims to be extremely easy to use, both for those publishing data (e.g. governments) and for those wanting to use the data (such as researchers and journalists). Basically, a is a simple `JSON` file schema, whose specifications you can find [here](http://fiscal.dataprotocols.org/spec/). 
+A [Datapackage](http://frictionlessdata.io/data-packages/) is a lightweight container for data. A [Fiscal Data Package](http://fiscal.dataprotocols.org/) is a data package for government budget and spending data. It's user-oriented and aims to be extremely easy to use, both for those publishing data (e.g. governments) and for those wanting to use the data (such as researchers and journalists). 
 
-In Gobble, fiscal data is represented by the `FiscalDataPackage` class. It's a sub-class of the `DataPackage` class, implemented bu the {datapackage-py library](https://github.com/frictionlessdata/datapackage-py). To create a local `FiscalDataPackage` you will to create directory structure that looks like this:
-
-```
-/basepath/descriptor.json   
-         /data/file1.csv
-               file2.csv
+Technically speaking, a fiscal datapackage consists of a `JSON` descriptor asociated with data files. The JSON descriptor needs to follow the specifications described [here](http://fiscal.dataprotocols.org/spec/). A basic local fiscal data package looks like this:
 
 ```
+/basepath/budget.json   
+         /data/budget_2014.csv
+               budget_2015.csv
+
+```
 
 
+## Command line interface
+
+Asciinema to come... 
+
+
+## Fiscal data package objects
+
+In Gobble, fiscal data is represented by the `FiscalDataPackage` class. It's a sub-class of the `DataPackage` class, defined by the [datapackage-py](https://github.com/frictionlessdata/datapackage-py) library. To create a `FiscalDataPackage`, pass the path of you descriptor to the constructor:
 
 ```
 budget = FiscalDataPackage('path/to/my/bad/package/descriptor.json')
@@ -38,7 +46,7 @@ bugdet.validate()
 
 If the descriptor schema is invalid, a `ValidationError` will be raised. To get a `list` of errors instead, use the `check` method. 
 ```
-budget.check_schema()
+budget.check()
 ```
 
 ## Upload
@@ -46,7 +54,13 @@ budget.check_schema()
 To upload a fiscal data package to Open-Spending: 
 
 ```
-url = budget.upload()  # the url of the package on Open-Spending
+url = budget.upload()  # the url of your new package on Open-Spending
+```
+
+By default, uploaded packages are private, to publish them, do:
+
+```
+new_state = budget.toggle('public') # should return 'public'
 ```
 
 ## Search and downloand
@@ -60,14 +74,13 @@ results = pull(query)
 
 The `results` is a `dict`. Valid search keys are: `size`, `title`, `author`, `description`, `regionCode`, `countryCode`, `cityCode`. Or you can use the magic  `q` key to search all fields at once.
 
-
 ## Resources
 
 - [Open-Spending web platform](next.openspending.org) 
 - [Open-Spending docs for developers](http://docs.openspending.org/en/latest/)
 - [datapackage-py package repository](http://frictionlessdata.io/data-packages/) 
 - [Fiscal Data Package homepage](http://fiscal.dataprotocols.org/)
-- [Open]
+- [Open-Knowledge Foundation](https://okfn.org)
 
 ## License
 
@@ -75,4 +88,4 @@ Gobble is under MIT License.
 
 ## Contributions
 
-Gobble is in Alpha release. We welcome feedback, issues and pull-requests. You can find []
+We welcome feedback, issues and pull-requests. You can find []
