@@ -17,7 +17,7 @@ from future import standard_library
 from requests import HTTPError
 from requests_futures.sessions import FuturesSession
 
-from gobble.configuration import settings
+from gobble.config import settings
 from gobble.logger import log
 from gobble.user import user
 from gobble.api import (handle, upload_package, request_upload,

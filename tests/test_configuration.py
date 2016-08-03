@@ -13,7 +13,7 @@ from pytest import mark
 
 standard_library.install_aliases()
 
-from gobble.configuration import ROOT_DIR, HOME, GOBBLE_MODE
+from gobble.config import ROOT_DIR, HOME, GOBBLE_MODE
 from tests.parameters import configurations
 
 
