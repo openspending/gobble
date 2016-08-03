@@ -9,8 +9,8 @@ SEARCH_KEYS = ['q', 'size', 'title', 'author', 'description',
                'regionCode', 'countryCode', 'cityCode']
 
 
-def pull(query, private=True, limit=None):
-    """Query the ElasticSearch database.
+def search(query, private=True, limit=None):
+    """Query the packages on Open-Spending.
 
     You can search a package by `title`, `author`, `description`, `regionCode`,
     `countryCode` or`cityCode`. You can match all these fields at once with the
@@ -25,12 +25,12 @@ def pull(query, private=True, limit=None):
     :param private: show private datapackages
     :param limit: the number of results returned
 
-    :type query: "class:`dict`
-    :rtype private: :class:`bool'
-    :rtype size: :class:`int'
+    :type query: `dict`
+    :rtype private: `bool'
+    :rtype size: `int'
 
     :return: a dictionary with the results
-    :rtype: :class: `dict`
+    :rtype: :class: `list` of `dict`
     """
     _validate(query)
 
@@ -57,7 +57,3 @@ def _validate(query):
         if key not in SEARCH_KEYS:
             msg = 'Invalid search key "{key}" for package'
             raise ValueError(msg.format(key=key))
-
-
-if __name__ == '__main__':
-    pull()

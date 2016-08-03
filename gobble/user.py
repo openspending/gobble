@@ -116,7 +116,7 @@ class LocalHost(SimpleHTTPRequestHandler):
                 log.info('Saved your token in %s', TOKEN_FILE)
 
 
-def start():
+def create_user():
     """Obtain the new user a token.
 
     Open-Spending uses Google OAuth2 for authentication, so you will need a
