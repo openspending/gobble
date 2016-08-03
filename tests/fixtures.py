@@ -95,7 +95,7 @@ def mock_user():
 
 @fixture
 def mock_batch():
-    return patch('gobble.uploader.Batch', autospec=True)
+    return patch('gobble.uploader.FiscalDataPackage', autospec=True)
 
 
 @fixture
