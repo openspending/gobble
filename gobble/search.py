@@ -1,6 +1,5 @@
 """Search for users and package inside the ElasticSearch database"""
 
-from click import command
 
 from gobble.api import search_packages, handle
 from gobble.user import user
@@ -10,8 +9,7 @@ SEARCH_KEYS = ['q', 'size', 'title', 'author', 'description',
                'regionCode', 'countryCode', 'cityCode']
 
 
-@command(name='pull')
-def pull(query, private=True, size=None):
+def pull(query, private=True, limit=None):
     """Query the ElasticSearch database.
 
     You can search a package by `title`, `author`, `description`, `regionCode`,
@@ -25,7 +23,7 @@ def pull(query, private=True, size=None):
 
     :param query: a `dict` of key value pairs
     :param private: show private datapackages
-    :param size: the number of results returned
+    :param limit: the number of results returned
 
     :type query: "class:`dict`
     :rtype private: :class:`bool'
@@ -36,8 +34,8 @@ def pull(query, private=True, size=None):
     """
     _validate(query)
 
-    if size:
-        query.update(size=size)
+    if limit:
+        query.update(size=limit)
 
     quoted_query = _sanitize(query)
 
@@ -59,3 +57,7 @@ def _validate(query):
         if key not in SEARCH_KEYS:
             msg = 'Invalid search key "{key}" for package'
             raise ValueError(msg.format(key=key))
+
+
+if __name__ == '__main__':
+    pull()

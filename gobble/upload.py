@@ -64,6 +64,8 @@ def push(target, publish=False):
     if publish:
         toggle(batch.name)
 
+    return batch
+
 
 class ToggleError(Exception):
     pass
@@ -121,11 +123,7 @@ def validate(target, raise_error=True, schema='fiscal'):
 
         for error in package.iter_errors():
             messages.append(error.message)
-
-        log.warn('%s has ERRORS!' % name)
-        for message in messages:
-            log.warn(message)
-        log.warn('end of errors')
+            log.warn('Validation error: %s', error.message)
 
         if raise_error:
             message = 'Cannot upload %s because it has %s errors'
@@ -164,10 +162,10 @@ class Batch(DataPackage):
     the default schema is "fiscal".
     """
 
-    def __init__(self, filepath, schema='fiscal', **kwargs):
-        super(Batch, self).__init__(filepath, schema=schema, **kwargs)
+    def __init__(self, target, schema='fiscal', **kwargs):
+        super(Batch, self).__init__(target, schema=schema, **kwargs)
 
-        self.validate()
+        validate(target)
         self._check_file_formats()
 
         self.streams = []
@@ -176,8 +174,8 @@ class Batch(DataPackage):
         self.responses = []
 
         self.name = self.descriptor['name']
-        self.path = basename(filepath)
-        self.filepath = filepath
+        self.path = basename(target)
+        self.filepath = target
 
         log.info('Starting uploading process for %s', self)
 
