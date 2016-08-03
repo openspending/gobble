@@ -17,6 +17,7 @@ from gobble.configuration import settings
 from gobble.logger import log
 from gobble.snapshot import SnapShot, to_json
 
+
 # One session for all queries
 _session = Session()
 
@@ -90,8 +91,10 @@ authorize_user = EndPoint('GET', 'user', 'authorize')
 oauth_callback = EndPoint('GET', 'oauth', 'callback')
 update_user = EndPoint('POST', 'user', 'update')
 search_packages = EndPoint('GET', 'search', 'package')
-upload_package = EndPoint('POST', 'datastore', 'upload')
+upload_package = EndPoint('POST', 'package', 'upload')
+upload_status = EndPoint('GET', 'package', 'status')
 request_upload = EndPoint('POST', 'datastore', trailing_slash=True)
+toggle_publish = EndPoint('POST', 'package', 'publish')
 # -----------------------------------------------------------------------------
 
 

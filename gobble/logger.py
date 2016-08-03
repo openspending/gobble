@@ -63,6 +63,12 @@ def _configure_logger(name):
 
 log = _configure_logger('Gobble')
 
-log.info('Gobble is running in %s mode', GOBBLE_MODE)
-log.info('File log level: %s', settings.CONSOLE_LOG_LEVEL)
-log.info('Console log level: %s', settings.FILE_LOG_LEVEL)
+
+log.debug('Gobble is running in %s mode', GOBBLE_MODE)
+
+
+for key, value in vars(settings).items():
+    if key.isupper():
+        log.debug('%s = %s', key, value)
+
+

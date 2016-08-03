@@ -10,7 +10,6 @@ import io
 from builtins import dict
 from future import standard_library
 from future.backports.http.server import HTTPServer, SimpleHTTPRequestHandler
-from pip.utils import cached_property
 from os.path import join
 from json import loads
 from os import mkdir
@@ -19,98 +18,111 @@ from json import dumps
 
 from gobble.logger import log
 from gobble.configuration import settings
-from gobble.api import authenticate_user, authorize_user, update_user, handle
+from gobble.api import (handle,
+                        authenticate_user,
+                        authorize_user,
+                        oauth_callback)
 
 standard_library.install_aliases()
 
 
 OS_SERVICES = ['os.datastore']
 TOKEN_FILE = join(settings.USER_DIR, 'token.json')
-PERMISSIONS_FILE = 'permission.json'
-AUTHENTICATION_FILE = 'authentication.json'
+PERMISSIONS_FILE = join(settings.USER_DIR, 'permission.json')
+AUTHENTICATION_FILE = join(settings.USER_DIR, 'authentication.json')
 
 
 class TokenExpired(Exception):
     pass
 
 
-class UserUpdateError(Exception):
-    pass
-
-
 class User(object):
-    """A contributor on the Open-Spending platform."""
+    """A contributor on Open-Spending.
+
+    Note: you don't need to instantiate or even import this class yourself.
+    The correlation is that Gobble only supports a single user for now.
+
+    If you use Gobble for the first time, run the :method:`user.start` function
+    first. It will help you obtain your authentication token. Open-Spending
+    uses Google OAuth2, so you will need a valid Google email to make it work.
+
+    Logs, tokens, permissions and snapshots of the latest API requests are
+    saved in the user directory, which by default is :data:`~/.gobble`.
+    """
 
     def __init__(self):
-        self._authentication = {}
-        self._permissions = []
+        self.folder = settings.USER_DIR
+        self.token = self._uncache_token()
+        self.authentication = self._request_authentication()
+        self.permissions = self._request_permissions()
+        self.name = None
 
-    @cached_property
-    def token(self):
+    @staticmethod
+    def _uncache_token():
+        """Read the token from the cache.
+        """
         with io.open(TOKEN_FILE) as cache:
             json = loads(cache.read())
             log.debug('Your token is %s', json['token'])
+
             return json['token']
 
-    def authenticate(self):
+    def _request_authentication(self):
+        """Ask Open-Spending if the token is valid.
+        """
         query = dict(jwt=self.token)
         response = authenticate_user(params=query)
-        self._authentication = handle(response)
+        authentication = handle(response)
+        self.name = authentication['profile']['name']
 
-        if not self._authentication['authenticated']:
+        if not authentication['authenticated']:
             message = 'Token has expired: request a new one'
             log.error(message)
             raise TokenExpired(message)
 
-        log.info('Hello %s! You are logged in Open-Spending', self)
-        return self._authentication
+        log.info('Hello %s! You are logged into Open-Spending', self)
+        return authentication
 
-    def request_permissions(self):
+    def _request_permissions(self):
+        """Request permissions for Open-Spending services.
+        """
+        permissions = {}
+
         for service in OS_SERVICES:
             query = dict(jwt=self.token, service=service)
             response = authorize_user(params=query)
-            json = handle(response)
-            self._permissions.append(json)
-            return self._permissions
+            permission = handle(response)
+            permissions.update({service: permission})
 
-    @property
-    def permissions(self):
-        return {p.get('service'): p for p in self._permissions}
-
-    def update(self, **field):
-        response = update_user(jwt=self.token, **field)
-        confirmation = handle(response)
-        if not confirmation['success']:
-            raise UserUpdateError(confirmation['error'])
+            return permissions
 
     def __str__(self):
-        return self._authentication['profile']['name']
+        return self.name
 
     def __repr__(self):
         return '<User: ' + str(self) + '>'
 
-    def info(self):
-        user = self._authentication
-        user.update(self._permissions)
-        user.update(self.token)
-        return user
-
 
 class LocalHost(SimpleHTTPRequestHandler):
-    """A local server to catch and save the token"""
+    """A local server to catch and save the token."""
 
     def do_GET(self):
         log.debug('Callback received: %s', self.path)
         token = self.path[6:]
 
-        with io.open(TOKEN_FILE, 'w+', encoding='utf-8') as file:
-            file.write(dumps({'token': token}, ensure_ascii=False))
+        if token:
+            with io.open(TOKEN_FILE, 'w+', encoding='utf-8') as file:
+                file.write(dumps({'token': token}, ensure_ascii=False))
+                log.info('Saved your token in %s', TOKEN_FILE)
 
-        log.info('Saved your token in %s', TOKEN_FILE)
 
+def start():
+    """Obtain the new user a token.
 
-def create_user():
-    """Get the new user a token and cache """
+    Open-Spending uses Google OAuth2 for authentication, so you will need a
+    valid Google email address to make this work. When you click on the link
+    provided, you will be redirected to your browser to sign up. That's it.
+    """
 
     def install_user_folder():
         try:
@@ -120,15 +132,14 @@ def create_user():
 
     def request_new_token():
         localhost = 'http://%s:%s' % settings.LOCALHOST
-        next_url = dict(next=localhost)
-
-        response = authenticate_user(params=next_url)
+        query = dict(next=localhost, callback_url=oauth_callback.url)
+        response = authenticate_user(query)
         authorization = handle(response)
-        prompt_user(authorization)
-
         new_thread = Thread(target=listen_for_token)
+        prompt_user(authorization)
         local_server = new_thread.run()
         local_server.join()
+        log.info('Well done, you have a now token!')
 
     def prompt_user(authorization):
         sign_up_url = authorization['providers']['google']['url']
@@ -140,23 +151,26 @@ def create_user():
         server = HTTPServer(settings.LOCALHOST, LocalHost)
         server.serve_forever()
 
-    def cache(info, file):
+    def cache(info_, file):
         with io.open(file, 'w+', encoding='utf-8') as json:
-            json.write(dumps(info, ensure_ascii=False))
+            json.write(dumps(info_, ensure_ascii=False))
 
     install_user_folder()
     request_new_token()
 
-    user = User()
-    user.authenticate()
-    user.request_permissions()
+    user_ = User()
 
-    cache(user.token, TOKEN_FILE)
-    cache(user._permissions, PERMISSIONS_FILE)
-    cache(user._authentication, AUTHENTICATION_FILE)
+    cached_info = (
+        (user_.token, TOKEN_FILE),
+        (user_.permissions, PERMISSIONS_FILE),
+        (user_.authentication, AUTHENTICATION_FILE)
+    )
+    for info in cached_info:
+        cache(*info)
+        log.debug('Cached %s to %s', *info)
 
-    return user
+    return user_
 
 
-if __name__ == '__main__':
-    u = User()
+# Expose a user object for use in other modules
+user = User()

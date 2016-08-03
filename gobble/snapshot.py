@@ -8,16 +8,16 @@ from json import loads, dumps
 from os import listdir
 from os.path import join, isdir
 from re import search
+from click import command
 
 import io
-
-from gobble.configuration import ROOT_DIR
 
 try:
     from json import JSONDecodeError
 except ImportError:
     JSONDecodeError = ValueError
 
+from gobble.configuration import ROOT_DIR
 from gobble.logger import log
 from gobble.configuration import settings
 
@@ -82,8 +82,8 @@ class SnapShot(OrderedDict):
         for message in messages:
             log.debug(*message)
 
-        if settings.EXPANDED_LOG_STYLE:
-            log.debug(dumps(response_json, ensure_ascii=False))
+        indent = 4 if settings.EXPANDED_LOG_STYLE else None
+        log.debug(dumps(response_json, ensure_ascii=False, indent=indent))
 
         log.debug('{:*^100}'.format(transaction % end))
 
@@ -186,6 +186,7 @@ def freeze(json):
                     freeze(value)
 
 
+@command
 def archive(destination):
     """Freeze and move all snapshots to the destination folder."""
 
@@ -205,7 +206,3 @@ def archive(destination):
             output = join(destination, file)
             with io.open(output, 'w+', encoding='utf-8') as target:
                 target.write(dumps(snapshot, ensure_ascii=False))
-
-
-if __name__ == '__main__':
-    archive('/home/loic')

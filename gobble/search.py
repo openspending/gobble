@@ -2,12 +2,14 @@
 
 
 from gobble.api import search_packages, handle
+from gobble.user import user
+
 
 SEARCH_KEYS = ['q', 'size', 'title', 'author', 'description',
                'regionCode', 'countryCode', 'cityCode']
 
 
-def search(query, user=None, size=None):
+def pull(query, private=True, limit=None):
     """Query the ElasticSearch database.
 
     You can search a package by `title`, `author`, `description`, `regionCode`,
@@ -20,11 +22,11 @@ def search(query, user=None, size=None):
     parameter.
 
     :param query: a `dict` of key value pairs
-    :param user: an authenticated user
-    :param size: the number of results returned
+    :param private: show private datapackages
+    :param limit: the number of results returned
 
     :type query: "class:`dict`
-    :rtype user: :class:`gobble.user.User'
+    :rtype private: :class:`bool'
     :rtype size: :class:`int'
 
     :return: a dictionary with the results
@@ -32,12 +34,12 @@ def search(query, user=None, size=None):
     """
     _validate(query)
 
-    if size:
-        query.update(size=size)
+    if limit:
+        query.update(size=limit)
 
     quoted_query = _sanitize(query)
 
-    if user:
+    if private:
         quoted_query.update(jwt=user.token)
 
     response = search_packages(params=quoted_query)
@@ -55,3 +57,7 @@ def _validate(query):
         if key not in SEARCH_KEYS:
             msg = 'Invalid search key "{key}" for package'
             raise ValueError(msg.format(key=key))
+
+
+if __name__ == '__main__':
+    pull()

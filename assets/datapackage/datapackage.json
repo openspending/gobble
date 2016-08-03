@@ -245,9 +245,9 @@
     {
       "name": "data",
       "format": "csv",
-      "path": "data.1/data.csv",
-      "mediatype": "application/vnd.ms-excel",
-      "bytes": 5056227,
+      "path": "data/data.csv",
+      "mediatype": "text/csv",
+      "bytes": 50556,
       "dialect": {
         "csvddfVersion": 1,
         "delimiter": ",",

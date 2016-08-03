@@ -36,6 +36,7 @@ class Production(object):
 
 
 class Development(Production):
+    S3_BUCKET_URL = 'http://fakes3/fake-bucket'
     EXPANDED_LOG_STYLE = True
     CONSOLE_LOG_LEVEL = DEBUG
     FILE_LOG_LEVEL = None
@@ -47,13 +48,6 @@ class Development(Production):
                           '[%(funcName)s] '
                           '[%(levelname)s] '
                           '%(message)s')
-
-
-class Testing(Production):
-    USER_DIR = join(HOME, '.gobble.test')
-    LOG_FILE = None
-    CONSOLE_LOG_LEVEL = DEBUG
-    FILE_LOG_LEVEL = DEBUG
 
 
 settings = getattr(modules[__name__], GOBBLE_MODE)

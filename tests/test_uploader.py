@@ -1,43 +1,46 @@
 """Tests for the uploader module"""
 
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
 from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
 
+from datapackage import DataPackage
+from datapackage.exceptions import ValidationError
 from future import standard_library
-from pytest import mark
+from pytest import raises
 
-from gobble.configuration import GOBBLE_MODE
-# noinspection PyUnresolvedReferences
-from tests.fixtures import mock_package, mock_user, permissions
-from gobble.upload import Batch
-from tests.parameters import s3_bucket_test_cases
-from gobble.api import request_upload
+from gobble.upload import check_datapackage_schema
 
 standard_library.install_aliases()
 
 
-# noinspection PyShadowingNames
-@mark.skipif(GOBBLE_MODE == 'Testing', reason='Requires Docker container')
-def test_request_upload_urls_returns_correct_json(mock_user,
-                                                  mock_package,
-                                                  permissions):
-
-    # This is an example of how NOT to test.
-    # I'm leaving it here as a reminder.
-    mock_user.permissions = permissions
-    batch = Batch(mock_user, mock_package)
-    response = batch.request_s3_upload()
-    assert response.description() == request_upload.snapshot['response_json']
+def test_validating_bad_package_returns_list_of_messages_if_flag_false():
+    bad_package = {'foo': 'bar'}
+    report = check_datapackage_schema(bad_package, raise_error=False)
+    assert isinstance(report, list)
+    assert report[0] == "'name' is a required property"
 
 
-# noinspection PyShadowingNames
-@mark.parametrize(['upload_url', 's3_bucket_url'], s3_bucket_test_cases)
-def test_s3_bucket_urls_are_parsed_correctly(upload_url,
-                                             s3_bucket_url,
-                                             mock_user,
-                                             mock_package):
-    batch = Batch(mock_user, mock_package)
-    batch.urls = {'foo': upload_url}
-    assert batch.s3_bucket == s3_bucket_url
+def test_validating_bad_package_raise_error_by_default():
+    bad_package = {'foo': 'bar'}
+    with raises(ValidationError):
+        check_datapackage_schema(bad_package)
+
+
+def test_report_validation_returns_true_for_valid_package():
+    bad_package = {'name': 'foo'}
+    report = check_datapackage_schema(bad_package)
+    assert report
+
+
+# def test_report_validation_errors_logs_error_messages(capsys):
+#     bad_package = DataPackage({'foo': 'bar'})
+#     report_validation_errors(bad_package)
+#     stdout, stderr = capsys.readouterr()
+#     print('validating')
+#     print(settings.CONSOLE_LOG_LEVEL)
+#     print('yo', stdout)
+#     if settings.CONSOLE_LOG_LEVEL <= INFO:
+#         assert 'validating' in stdout
+#         assert 'required property' in stdout
