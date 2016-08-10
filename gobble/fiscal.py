@@ -71,7 +71,7 @@ class FiscalDataPackage(DataPackage):
 
     def __init__(self, filepath, **kw):
         if not isfile(filepath):
-            raise NotImplemented('%s is not a local path', target)
+            raise NotImplemented('%s is not a local path', filepath)
 
         super(FiscalDataPackage, self).__init__(filepath,
                                                 schema='fiscal', **kw)
@@ -89,9 +89,9 @@ class FiscalDataPackage(DataPackage):
     def validate(self, raise_error=True):
         """Validate a datapackage schema.
 
-        :param raise_error: do not fail but give me feedback instead
+        :param raise_error: raise error on failure or not (default: True)
         :raise: :class:`ValidationError` if the schema is invalid
-        :return Return a list of error messages if `raise_error` is True.
+        :return True or a list of error messages (if `raise_error` is False).
         """
         if raise_error:
             super(FiscalDataPackage, self).validate()
@@ -236,10 +236,15 @@ class FiscalDataPackage(DataPackage):
             query = {k: v[0] for k, v in info['upload_query'].items()}
             yield info['upload_url'], path, query, self._get_header(path)
 
-    def _push_to_s3(self, url, path, headers, query):
+    def _push_to_s3(self, url, path, query, headers):
         """Send data files for upload to the S3 bucket.
         """
+        headers.update({'Content-Type': 'application/octet-stream'})
+
         log.debug('Started uploading %s to %s', path, url)
+        log.debug('Headers: %s', headers)
+        log.debug('Query parameters: %s', query)
+
         absolute_path = join(self.base_path, path)
         stream = io.open(absolute_path, mode='rb')
         future = self._session.put(url,
@@ -302,3 +307,8 @@ class FiscalDataPackage(DataPackage):
 
     def __getitem__(self, index):
         return self.resources[index]
+
+
+if __name__ == '__main__':
+    package = FiscalDataPackage('/home/loic/repos/gobble/assets/datapackage/datapackage.json')
+    package.upload()
