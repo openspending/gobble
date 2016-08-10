@@ -15,28 +15,41 @@ from unittest.mock import patch
 from future import standard_library
 from pytest import fixture
 
+from gobble import FiscalDataPackage
 from gobble.config import settings, GOBBLE_MODE
 from gobble.config import ROOT_DIR
 
 standard_library.install_aliases()
 
 
-# Sanity check
+# Devlopment mode required
 # -----------------------------------------------------------------------------
 class BadTestingConfiguration(Exception):
     pass
 
 
-if GOBBLE_MODE not in ('Testing', 'Development'):
-    sanity = (
-        'Please run the tests in Testing or Development mode '
-        'or bad things will happen and you will hate yourself'
-    )
-    raise BadTestingConfiguration(sanity)
+if GOBBLE_MODE != 'Development':
+    raise BadTestingConfiguration()
+
+
+# Fiscal data packages
+# -----------------------------------------------------------------------------
+
+@fixture(scope='session')
+def fiscal_package():
+    file = join(ROOT_DIR, 'assets', 'datapackage', 'datapackage.json')
+    return FiscalDataPackage(file)
+
+
+@fixture(scope='session')
+def invalid_fiscal_package():
+    file = join(ROOT_DIR, 'assets', 'datapackage', 'invalid.json')
+    return FiscalDataPackage(file)
 
 
 # Fake the user's local set-up
 # -----------------------------------------------------------------------------
+
 @fixture
 def tmp_user_dir(request):
     original = settings.USER_DIR
