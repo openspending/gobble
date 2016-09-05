@@ -5,6 +5,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import sys
 import io
 
 from base64 import b64encode
@@ -214,10 +215,11 @@ class FiscalDataPackage(DataPackage):
             }
         }
 
-    def _get_header(self, path):
+    def _get_header(self, path, content_type):
         filepath = join(self.base_path, path)
         return {'Content-Length': str(getsize(filepath)),
-                'Content-MD5': compute_hash(filepath)}
+                'Content-MD5': compute_hash(filepath),
+                'Content-Type': content_type}
 
     @property
     def _descriptor_s3_url(self):
@@ -233,12 +235,11 @@ class FiscalDataPackage(DataPackage):
             message = '%s is ready for upload to %s'
             log.info(message, path, info['upload_url'])
             query = {k: v[0] for k, v in info['upload_query'].items()}
-            yield info['upload_url'], path, query, self._get_header(path)
+            yield info['upload_url'], path, query, self._get_header(path, info['type'])
 
     def _push_to_s3(self, url, path, query, headers):
         """Send data files for upload to the S3 bucket.
         """
-        headers.update({'Content-Type': 'application/octet-stream'})
 
         log.debug('Started uploading %s to %s', path, url)
         log.debug('Headers: %s', headers)
@@ -310,6 +311,6 @@ class FiscalDataPackage(DataPackage):
 
 if __name__ == '__main__':
     user_ = User()
-    filepath_ = '/home/loic/repos/gobble/assets/datapackage/datapackage.json'
+    filepath_ = sys.argv[1]
     package_ = FiscalDataPackage(filepath_, user=user_)
     package_.upload()

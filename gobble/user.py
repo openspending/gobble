@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import absolute_import
 
 import io
+import os
 
 from builtins import dict
 from future import standard_library
@@ -30,7 +31,7 @@ OS_SERVICES = ['os.datastore']
 TOKEN_FILE = join(settings.USER_DIR, 'token.json')
 PERMISSIONS_FILE = join(settings.USER_DIR, 'permission.json')
 AUTHENTICATION_FILE = join(settings.USER_DIR, 'authentication.json')
-
+TOKEN_ENV_VAR = 'GOBBLE_AUTH_TOKEN'
 
 class InvalidToken(Exception):
     pass
@@ -74,6 +75,8 @@ class User(object):
     def _uncache_token():
         """Read the token from the cache.
         """
+        if TOKEN_ENV_VAR in os.environ:
+            return os.environ[TOKEN_ENV_VAR]
         with io.open(TOKEN_FILE) as cache:
             json = loads(cache.read())
             log.debug('Your token is %s', json['token'])
