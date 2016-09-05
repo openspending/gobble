@@ -108,7 +108,7 @@
             "title": "ID_PP",
             "parent": "ID_Modalidad"
           },
-          "Programa_Presupuestario": {
+          "PP": {
             "source": "PP",
             "title": "Programa Presupuestario",
             "labelfor": "ID_PP"
@@ -401,7 +401,7 @@
             "conceptType": "activity"
           },
           {
-            "title": "Programa Presupuestario",
+            "title": "PP",
             "name": "PP",
             "slug": "Programa_Presupuestario",
             "type": "string",
