@@ -239,7 +239,7 @@
     "end": "2015-12-31"
   },
   "title": "Mexican federal budget",
-  "name": "mexican-federal-budget-test-gobble",
+  "name": "mfb2",
   "description": "This datapackage is used to test the upload module",
   "resources": [
     {
@@ -564,7 +564,7 @@
       }
     }
   ],
-  "@context": "http://schemas.frictionlessdata.io/fiscal-data-package.jsonld",
+  "@context": "http://schemas.frictionlessdata.io/fiscal-data-package.json",
   "owner": "5df4a7b06a940c992d1c44525daff47b",
   "author": "loic <loic.jounot@gmail.com>"
 }

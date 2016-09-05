@@ -13,7 +13,7 @@ from pytest import mark
 
 standard_library.install_aliases()
 
-from gobble.config import ROOT_DIR, HOME, GOBBLE_MODE
+from gobble.config import ROOT_DIR, HOME_DIR, GOBBLE_MODE
 from tests.parameters import configurations
 
 
@@ -24,7 +24,7 @@ def test_log_levels_are_set(settings):
 
 def test_global_constants_are_correct():
     assert GOBBLE_MODE in ('Production', 'Development', 'Testing')
-    assert isdir(HOME)
+    assert isdir(HOME_DIR)
     assert isdir(ROOT_DIR)
 
 

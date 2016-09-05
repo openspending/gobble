@@ -2,6 +2,3 @@ click
 requests
 requests-futures
 datapackage
-goodtables
-boto
-munch

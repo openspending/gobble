@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Error><Code>SignatureDoesNotMatch</Code>
+    <Message>The request signature we calculated does not match the signature you provided. Check your key and signing method.</Message>
+    <AWSAccessKeyId>AKIAJV3A3EJX5X2PSX5Q</AWSAccessKeyId>
+    <StringToSign>
+        PUT
+        +uqBmwvQLi0M2W2enNxD/A==
+        application/octet-stream
+        1473265864
+        /datastore.openspending.org/5df4a7b06a940c992d1c44525daff47b/mfb/data/data.csv</StringToSign>
+    <SignatureProvided>3eXfB2wlSTqWO/yPg2ZKZI0uRis=</SignatureProvided>
+    <StringToSignBytes>50 55 54 0a 2b 75 71 42 6d 77 76 51 4c 69 30 4d 32 57 32 65 6e 4e 78 44 2f 41 3d 3d 0a 61 70 70 6c 69 63 61 74 69 6f 6e 2f 6f 63 74 65 74 2d 73 74 72 65 61 6d 0a 31 34 37 33 32 36 35 38 36 34 0a 2f 64 61 74 61 73 74 6f 72 65 2e 6f 70 65 6e 73 70 65 6e 64 69 6e 67 2e 6f 72 67 2f 35 64 66 34 61 37 62 30 36 61 39 34 30 63 39 39 32 64 31 63 34 34 35 32 35 64 61 66 66 34 37 62 2f 6d 66 62 2f 64 61 74 61 2f 64 61 74 61 2e 63 73 76</StringToSignBytes><RequestId>C9B220D07193A8F1</RequestId>
+    <HostId>CW09jkJaqdK5b/nzooOwO8ncjrEc6ClScW7k4LYY0PiDs45n2Gdgd4v73mcQ1uRt8aquVyXkQr4=</HostId>
+</Error>

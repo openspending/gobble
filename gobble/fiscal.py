@@ -14,12 +14,12 @@ from time import sleep
 from datapackage import DataPackage
 from datapackage.exceptions import ValidationError
 from future import standard_library
+from gobble.user import User
 from requests import HTTPError
 from requests_futures.sessions import FuturesSession
 
 from gobble.config import settings
 from gobble.logger import log
-from gobble.user import user
 from gobble.api import (handle, upload_package, request_upload,
                         toggle_publish, upload_status)
 
@@ -27,12 +27,8 @@ standard_library.install_aliases()
 
 
 HASHING_BLOCK_SIZE = 65536
-OS_DATA_FORMATS = ['csv']
+OS_DATA_FORMATS = ['.csv']
 POLL_PERIOD = 5
-
-
-token = user.permissions['os.datastore']['token']
-owner_id = user.authentication['profile']['idhash']
 
 
 class ToggleError(Exception):
@@ -67,9 +63,10 @@ class FiscalDataPackage(DataPackage):
     descriptor, but it can also be a dictionary representing the schema itself
     or a url pointing to a descriptor (for more information please refer to the
     documentation for the :class:`datapackage.DataPackage` class.
+    :param user: a `gobble.user.user` object.
     """
 
-    def __init__(self, filepath, **kw):
+    def __init__(self, filepath, user=None, **kw):
         if not isfile(filepath):
             raise NotImplemented('%s is not a local path', filepath)
 
@@ -82,6 +79,7 @@ class FiscalDataPackage(DataPackage):
         self._futures = []
         self._responses = []
 
+        self.user = user
         self.name = self.descriptor.get('name')
         self.path = basename(filepath)
         self.filepath = filepath
@@ -99,15 +97,16 @@ class FiscalDataPackage(DataPackage):
         else:
             try:
                 super(FiscalDataPackage, self).validate()
-                log.info('%s is a valid datapackage', self.name)
-                return True
+                message = '%s (%s) is a valid fiscal datapackage descriptor'
+                log.info(message, self, self.path)
+                return []
 
             except ValidationError:
                 messages = []
 
                 for error in self.iter_errors():
                     messages.append(error.message)
-                    log.warn('ValidationError: %s', error.message)
+                    log.warn('%s ValidationError: %s', self, error.message)
 
                 return messages
 
@@ -147,7 +146,7 @@ class FiscalDataPackage(DataPackage):
 
     @property
     def url(self):
-        return join(settings.OS_URL, owner_id + ':' + self.name)
+        return join(settings.OS_URL, self.user.id + ':' + self.name)
 
     @property
     def in_progress(self):
@@ -170,8 +169,8 @@ class FiscalDataPackage(DataPackage):
         :return: the new state of the package, i.e. "public" or "private"
         """
         publish = True if to_state == 'public' else False
-        package_id = owner_id + ':' + self.name
-        query = dict(jwt=token, id=package_id, publish=publish)
+        package_id = self.user.id + ':' + self.name
+        query = dict(jwt=self.user.token, id=package_id, publish=publish)
 
         answer = handle(toggle_publish(params=query))
 
@@ -210,24 +209,24 @@ class FiscalDataPackage(DataPackage):
         return {
             'filedata': filedata,
             'metadata': {
-                'owner': owner_id,
+                'owner': self.user.id,
                 'name': self.name
             }
         }
 
     def _get_header(self, path):
         filepath = join(self.base_path, path)
-        return {'Content-Length': getsize(filepath),
+        return {'Content-Length': str(getsize(filepath)),
                 'Content-MD5': compute_hash(filepath)}
 
     @property
     def _descriptor_s3_url(self):
-        return join(settings.S3_BUCKET_URL, owner_id, self.name, self.path)
+        return join(settings.S3_BUCKET_URL, self.user.id, self.name, self.path)
 
     def _request_s3_upload(self):
         """Request AWS S3 upload urls for all files.
         """
-        response = request_upload(params=dict(jwt=token), json=self.filedata)
+        response = request_upload(params=dict(jwt=self.user.token), json=self.filedata)
         files = handle(response)['filedata']
 
         for path, info in files.items():
@@ -283,7 +282,7 @@ class FiscalDataPackage(DataPackage):
 
         :return: the url of the fiscal datapackage on Open-Spending
         """
-        query = dict(jwt=token, datapackage=self._descriptor_s3_url)
+        query = dict(jwt=self.user.token, datapackage=self._descriptor_s3_url)
         response = upload_package(params=query)
         handle(response)
 
@@ -310,5 +309,7 @@ class FiscalDataPackage(DataPackage):
 
 
 if __name__ == '__main__':
-    package = FiscalDataPackage('/home/loic/repos/gobble/assets/datapackage/datapackage.json')
-    package.upload()
+    user_ = User()
+    filepath_ = '/home/loic/repos/gobble/assets/datapackage/datapackage.json'
+    package_ = FiscalDataPackage(filepath_, user=user_)
+    package_.upload()
