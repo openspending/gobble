@@ -108,7 +108,7 @@
             "title": "ID_PP",
             "parent": "ID_Modalidad"
           },
-          "Programa_Presupuestario": {
+          "PP": {
             "source": "PP",
             "title": "Programa Presupuestario",
             "labelfor": "ID_PP"
@@ -239,7 +239,7 @@
     "end": "2015-12-31"
   },
   "title": "Mexican federal budget",
-  "name": "mexican-federal-budget-test-gobble",
+  "name": "mfb2",
   "description": "This datapackage is used to test the upload module",
   "resources": [
     {
@@ -401,7 +401,7 @@
             "conceptType": "activity"
           },
           {
-            "title": "Programa Presupuestario",
+            "title": "PP",
             "name": "PP",
             "slug": "Programa_Presupuestario",
             "type": "string",
@@ -564,7 +564,7 @@
       }
     }
   ],
-  "@context": "http://schemas.frictionlessdata.io/fiscal-data-package.jsonld",
+  "@context": "http://schemas.frictionlessdata.io/fiscal-data-package.json",
   "owner": "5df4a7b06a940c992d1c44525daff47b",
   "author": "loic <loic.jounot@gmail.com>"
 }

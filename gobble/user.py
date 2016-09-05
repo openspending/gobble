@@ -6,6 +6,7 @@ from __future__ import division
 from __future__ import absolute_import
 
 import io
+import os
 
 from builtins import dict
 from future import standard_library
@@ -30,9 +31,9 @@ OS_SERVICES = ['os.datastore']
 TOKEN_FILE = join(settings.USER_DIR, 'token.json')
 PERMISSIONS_FILE = join(settings.USER_DIR, 'permission.json')
 AUTHENTICATION_FILE = join(settings.USER_DIR, 'authentication.json')
+TOKEN_ENV_VAR = 'GOBBLE_AUTH_TOKEN'
 
-
-class TokenExpired(Exception):
+class InvalidToken(Exception):
     pass
 
 
@@ -55,12 +56,27 @@ class User(object):
         self.token = self._uncache_token()
         self.authentication = self._request_authentication()
         self.permissions = self._request_permissions()
-        self.name = None
+        self.token = self.permissions['os.datastore']['token']
+        self.id = self.authentication['profile']['idhash']
+        self.name = self.authentication['profile']['name']
+
+    @classmethod
+    def _uncache(cls, key):
+        filepath = join(settings.USER_DIR, key + '.json')
+        try:
+            with io.open(filepath) as cache:
+                json = loads(cache.read())
+                log.debug('Your %s is %s', key, json)
+                return json
+        except FileNotFoundError:
+            return
 
     @staticmethod
     def _uncache_token():
         """Read the token from the cache.
         """
+        if TOKEN_ENV_VAR in os.environ:
+            return os.environ[TOKEN_ENV_VAR]
         with io.open(TOKEN_FILE) as cache:
             json = loads(cache.read())
             log.debug('Your token is %s', json['token'])
@@ -73,14 +89,14 @@ class User(object):
         query = dict(jwt=self.token)
         response = authenticate_user(params=query)
         authentication = handle(response)
-        self.name = authentication['profile']['name']
 
         if not authentication['authenticated']:
             message = 'Token has expired: request a new one'
             log.error(message)
-            raise TokenExpired(message)
+            raise InvalidToken(message)
 
-        log.info('Hello %s! You are logged into Open-Spending', self)
+        name = authentication['profile']['name']
+        log.info('Hello %s! You are logged into Open-Spending', name)
         return authentication
 
     def _request_permissions(self):
@@ -153,7 +169,7 @@ def create_user():
 
     def cache(info_, file):
         with io.open(file, 'w+', encoding='utf-8') as json:
-            json.write(dumps(info_, ensure_ascii=False))
+            json.write(dumps(info_, ensure_ascii=False, indent=4))
 
     install_user_folder()
     request_new_token()
@@ -173,4 +189,4 @@ def create_user():
 
 
 # Expose a user object for use in other modules
-user = User()
+# user = User()

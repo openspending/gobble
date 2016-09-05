@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -6,7 +7,6 @@ from __future__ import unicode_literals
 
 from json import loads
 from os.path import join, dirname
-
 from setuptools import setup, find_packages
 
 
@@ -48,5 +48,5 @@ setup(
     zip_safe=False,
     keywords=package['keywords'],
     classifiers=package['classifiers'],
-    entry_points={'console_scripts': ['gobble = gobble:cli']}
+    entry_points={'console_scripts': ['gobble = gobble.cli:gobble']}
 )

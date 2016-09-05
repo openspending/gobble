@@ -13,19 +13,19 @@ from future import standard_library
 
 standard_library.install_aliases()
 
-HOME = abspath(join(expanduser('~')))
+HOME_DIR = abspath(join(expanduser('~')))
 ROOT_DIR = abspath(join(dirname(__file__), '..'))
 GOBBLE_MODE = getenv('GOBBLE_MODE', 'Production')
 
 
 class Production(object):
     OS_URL = 'http://next.openspending.org'
-    S3_BUCKET_URL = 'https://s3.amazonaws.com:443/datastore.openspending.org'
+    S3_BUCKET_URL = 'https://s3.amazonaws.com/datastore.openspending.org'
     LOCALHOST = ('127.0.0.1', 8001)
-    USER_DIR = join(HOME, '.gobble')
-    LOG_FILE = join(HOME, '.gobble', 'gobble.log')
-    EXPANDED_LOG_STYLE = False
-    CONSOLE_LOG_LEVEL = INFO
+    USER_DIR = join(HOME_DIR, '.gobble')
+    LOG_FILE = join(HOME_DIR, '.gobble', 'gobble.log')
+    EXPANDED_LOG_STYLE = True
+    CONSOLE_LOG_LEVEL = DEBUG
     FILE_LOG_LEVEL = DEBUG
     CONSOLE_LOG_FORMAT = '[%(name)s] [%(levelname)s] %(message)s'
     FILE_LOG_FORMAT = ('[%(name)s] '
@@ -39,11 +39,11 @@ class Production(object):
 class Development(Production):
     S3_BUCKET_URL = 'http://fakes3/fake-bucket'
     OS_URL = 'http://dev.openspending.org'
-    USER_DIR = join(HOME, '.gobble.dev')
+    USER_DIR = join(HOME_DIR, '.gobble.dev')
     FILE_LOG_LEVEL = None
     LOG_FILE = None
     EXPANDED_LOG_STYLE = True
-    CONSOLE_LOG_LEVEL = DEBUG
+    CONSOLE_LOG_LEVEL = None
     CONSOLE_LOG_FORMAT = ('[%(name)s] '
                           '[%(module)s] '
                           '[%(funcName)s] '
