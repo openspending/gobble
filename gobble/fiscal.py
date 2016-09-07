@@ -203,7 +203,7 @@ class FiscalDataPackage(DataPackage):
                 'name': self.name,
                 'length': getsize(self.filepath),
                 'md5': compute_hash(self.filepath),
-                'type': 'text/json',
+                'type': 'application/octet-stream',
             }
         }
         filedata.update(descriptor_file)
@@ -313,4 +313,4 @@ if __name__ == '__main__':
     user_ = User()
     filepath_ = sys.argv[1]
     package_ = FiscalDataPackage(filepath_, user=user_)
-    package_.upload()
+    package_.upload(publish=True)
