@@ -10,7 +10,7 @@ import io
 
 from base64 import b64encode
 from hashlib import md5
-from os.path import getsize, join, basename, isfile
+from os.path import getsize, join, basename, isfile, splitext
 from time import sleep
 from datapackage import DataPackage
 from datapackage.exceptions import ValidationError
@@ -85,33 +85,43 @@ class FiscalDataPackage(DataPackage):
         self.path = basename(filepath)
         self.filepath = filepath
 
-    def validate(self, raise_error=True):
+    def validate(self, raise_on_error=True, schema_only=True):
         """Validate a datapackage schema.
 
-        :param raise_error: raise error on failure or not (default: True)
-        :raise: :class:`ValidationError` if the schema is invalid
-        :return True or a list of error messages (if `raise_error` is False).
-        """
-        if raise_error:
-            super(FiscalDataPackage, self).validate()
+        By default, only the data-package schema is validated. To validate the
+        data files too, set the `data` flag to `True`. The method fails if an
+        error is found, unless the `raise_error` flag is explicitely set to
+        `False`.
 
+        :param raise_on_error: raise error on failure or not (default: True)
+        :param schema_only: only validate the schema (default: True)
+        :raise: :class:`ValidationError` if the schema is invalid
+
+        :return A list of error messages or an empty list.
+        """
+        messages = []
+
+        if raise_on_error:
+            super(FiscalDataPackage, self).validate()
         else:
             try:
                 super(FiscalDataPackage, self).validate()
-                message = '%s (%s) is a valid fiscal datapackage descriptor'
-                log.info(message, self, self.path)
-                return []
+                message = '%s (%s) is a valid fiscal data-package schema'
+                log.info(message, self.path, self)
 
             except ValidationError:
-                messages = []
-
                 for error in self.iter_errors():
-                    messages.append(error.message)
-                    log.warn('%s ValidationError: %s', self, error.message)
+                    message = 'SCHEMA ERROR in %s: %s'
+                    args = self.path, error.message
+                    messages.append(message % args)
+                    log.warn(message, *args)
 
-                return messages
+        if not schema_only:
+            raise NotImplementedError('Data validation is not yet implemented')
 
-    def upload(self, publish=False):
+        return messages
+
+    def upload(self, publish=True):
         """Upload a fiscal datapackage to Open-Spending.
 
         It does this in 3 steps:

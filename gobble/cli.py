@@ -1,12 +1,16 @@
 """The command line interface for Gobble"""
 
 import io
-
+import sys
 from collections import defaultdict
-from json import dumps, loads
-from os import getcwd
+from json import loads
 from os.path import join, splitext, basename
 from shutil import rmtree
+
+from gobble.config import ROOT_DIR, settings
+from gobble.fiscal import FiscalDataPackage
+from gobble.search import search as elasticsearch, ALLOWED_KEYS
+from gobble.user import create_user, User
 from click import (Choice,
                    command,
                    argument,
@@ -16,16 +20,16 @@ from click import (Choice,
                    echo,
                    secho,
                    edit,
-                   version_option,
-                   pass_context)
-
-from gobble.config import ROOT_DIR, settings
-from gobble.fiscal import FiscalDataPackage, OS_DATA_FORMATS
-from gobble.search import search, SEARCH_ALIASES
-from gobble.user import create_user, User
+                   version_option)
 
 
-# Gobble: parent command
+DEFAULT_STYLE = dict(fg='white', bold=True)
+ERROR_STYLE = dict(fg='red', bold=True)
+SUCCESS_STYLE = dict(fg='green', bold=True)
+CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
+
+
+# Main command
 # -----------------------------------------------------------------------------
 
 def _get_package(key):
@@ -35,10 +39,7 @@ def _get_package(key):
         return package[key]
 
 
-@group(
-    invoke_without_command=True,
-    context_settings={'help_option_names': ['-h', '--help']}
-)
+@group(context_settings=CONTEXT_SETTINGS)
 @version_option(
     version=_get_package('version'),
     prog_name=_get_package('slug'),
@@ -48,7 +49,7 @@ def gobble():
     pass
 
 
-# View: sub-command
+# View
 # -----------------------------------------------------------------------------
 
 _FILES = [
@@ -62,7 +63,8 @@ _FILES = [
 
 
 @command(
-    epilog='FILE: %s' % ', '.join(_FILES)
+    epilog='FILE: %s' % ', '.join(_FILES),
+    context_settings=CONTEXT_SETTINGS
 )
 @argument(
     'file',
@@ -87,23 +89,23 @@ def view(file, editor):
     if editor:
         saved = edit(filename=filepath)
         if saved:
-            secho('Saved changes to %s' % filepath, fg='green')
+            secho('Saved changes to %s' % filepath, **SUCCESS_STYLE)
 
     else:
         try:
             with io.open(filepath) as cache:
                 echo(cache.read())
         except FileNotFoundError:
-            secho('%s could not be found' % filepath, fg='red')
+            secho('%s could not be found' % filepath, **ERROR_STYLE)
 
 
-# User: sub-command
+# User
 # -----------------------------------------------------------------------------
 
 _ACTIONS = ['create', 'delete']
 
 
-@command()
+@command(context_settings=CONTEXT_SETTINGS)
 @argument(
     'action',
     required=True,
@@ -121,177 +123,172 @@ def user(action):
     if action == 'create':
         echo('Welcome to Open-Spending %s' % create_user())
     elif action == 'delete':
-        user_ = User()
         rmtree(settings.USER_DIR)
-        echo('Deleted %s\' cache' % user_)
+
+        try:
+            username = User.uncache('authentication')['username']
+        except FileNotFoundError:
+            username = 'user unknown'
+
+        args = (settings.USER_DIR, username)
+        secho('Deleted %s (%s)' % args, **DEFAULT_STYLE)
 
 
-# Check: sub-command
+# Validate
 # -----------------------------------------------------------------------------
 
-@command()
+@command(context_settings=CONTEXT_SETTINGS)
 @argument(
-    'target',
+    'filepath',
     required=True,
     type=Path(exists=True, resolve_path=True)
 )
 @option(
-    '--data',
-    help='Treat this JSON file as a data file.',
+    '-s', '--schema',
+    help='Validate only the schema.',
     is_flag=True
 )
-@option(
-    '--package',
-    help='Validate both schema and data files.',
-    is_flag=True
-)
-@pass_context
-def check(context, target, data, package):
+def validate(filepath, schema):
     """Validate a fiscal data-package.
 
-    The TARGET is the relative or absolute path to a descriptor or data file.
-    JSON files are assumed to be descriptor files, unless the --data option is
-    passed. To validate and entire fiscal data-package (i.e. both the schema
-    and the data files), point to the package descriptor with the --package
-    flag.
+    The FILEPATH is the relative or absolute path to a datapackage. By default,
+    the command validates both the schema and the data files. To validate only
+    the schema, pass the --schema flag.
     """
-    _, extension = splitext(target)
+    _, extension = splitext(filepath)
+    filename = basename(filepath)
 
-    if extension == '.json' and not data:
-        fiscal_package = FiscalDataPackage(target)
-        errors = fiscal_package.validate(raise_error=False)
-        if errors:
-            for error in errors:
-                message = '%s | ERROR | %s'
-                args = basename(target), error
-                secho(message % args, fg='red', bold=True)
-        else:
-            message = '%s | SUCCESS | valid schema'
-            secho(message % basename(target), fg='green')
-        if package:
-            resources = fiscal_package.descriptor['resources']
-            paths = [file['path'] for file in resources]
-            context.package = fiscal_package
-        else:
-            paths = []
+    if extension != '.json':
+        secho('Expecting %s to be JSON file' % filepath, **ERROR_STYLE)
+        sys.exit(1)
+
+    package = FiscalDataPackage(filepath)
+    error_messages = package.validate(raise_on_error=False, schema_only=schema)
+
+    if error_messages:
+        for error_message in error_messages:
+            secho(error_message, **ERROR_STYLE)
     else:
-        paths = [target]
-
-    for path in paths:
-        _, extension = splitext(path)
-        if extension in OS_DATA_FORMATS:
-            message = '%s: data validation not supported yet'
-            secho(message % path, fg='white')
-        else:
-            message = '%s: extension not supported by Open-Spending'
-            secho(message % basename(path), fg='blue')
+        secho('SUCCESS! %s is valid' % filename, **SUCCESS_STYLE)
 
 
-# Push: sub-command
+# Upload
 # -----------------------------------------------------------------------------
 
-@command()
+@command(context_settings=CONTEXT_SETTINGS)
 @argument(
-    'target',
+    'filepath',
     type=Path(exists=True, resolve_path=True),
     required=True
 )
-@pass_context
-def push(context, target):
+@option(
+    '-s', '--skip',
+    help='Skip validation (not recommended).',
+    is_flag=True
+)
+@option(
+    '-p', '--private',
+    help='Do not publish the data-package after upload.',
+    is_flag=True
+)
+def upload(filepath, private, skip):
     """Upload a fiscal package to Open-Spending.
 
-
+    The FILEPATH is the relative or absolute path to the data-package file.
+    The data is always validated before upload, unless validation is skipped
+    explicitely by passing the --skip flag. This is not recommended practice.
+    Once uploaded, the data-package will be made public. If you wish to keep it
+    private, pass the --private flag.
     """
-    if hasattr(context, 'package'):
-        package = context.package
-    else:
-        user_ = User()
-        package = FiscalDataPackage(target, user=user_)
 
-    package.upload()
+    user_ = User()
+    package = FiscalDataPackage(filepath, user=user_)
+
+    if not skip:
+        package.validate(schema_only=True)
+
+    url = package.upload(publish=not private)
+    state = 'privately' if private else 'publicly'
+    args = package, state, url
+    message = 'Congratulations! %s is now %s available online: %s.'
+
+    secho(message % args, **SUCCESS_STYLE)
 
 
-# Pull: sub-command
+# Search
 # -----------------------------------------------------------------------------
 
-@command()
-def pull(name, owner, data=False, destination=getcwd()):
-    """Download a fiscal package from Open-Spending.
-
-    If no destination folder is provided, the fiscal data package will be
-    downloaded to the current working directory. By default, only the package
-    JSON descriptor is downloaded, not the data. To include data too, set
-    the --data option to `True`.
-    """
-    if data:
-        raise NotImplemented('Gobble does not yet support data downlaods')
-
-    query = {'title': package_id}
-    descriptor = search(query, private=True, limit=1)
-
-    filepath = join(destination, descriptor['title'] + 'json')
-    json = dumps(descriptor, ensure_ascii=False, indent=4)
-    with io.open(filepath, 'w+', encoding='utf-8') as output:
-        output.write(json)
-
-    echo(json)
-
-
-@command()
+@command(context_settings=CONTEXT_SETTINGS)
 @argument(
     'expression',
     required=False
 )
 @option(
-    '--where',
+    '-w', '--where',
     help='Search a specific field (may be repeated).',
-    type=(Choice(list(SEARCH_ALIASES.keys())), str),
+    type=(Choice(list(ALLOWED_KEYS.keys())), str),
     nargs=2,
-    metavar='FIELD VALUE',
+    metavar='KEY VALUE',
     multiple=True
 )
 @option(
-    '--limit',
+    '-l', '--limit',
     help='Limit the number of results.',
     default=False,
     type=int
 )
-@option(
-    '--raw',
-    help='Return the raw JSON response.',
-    default=False,
-    is_flag=True
-)
-def search(expression, where, limit, raw):
+def search(expression, where, limit):
     """Search fiscal packages on Open-Spending.
 
-    You can search for an EXPRESSION across all fields or restrict yourself to
-    specific fields using the --where option. You can also combine both
-    approaches. Allowed search fields are: "title", "author", "description",
-    "region", "country" and "city".
+    You can search for an EXPRESSION across all keys or restrict yourself to
+    specific keys using the --where option. You can also combine both
+    approaches. Allowed search keys are:
+
+    \b
+        - title,
+        - author
+        - description
+        - region
+        - country
+        - city
 
     The command returns a one line summary of each matching fiscal package. To
     return the complete search results as JSON, pass the --raw flag. Results
-    always include private unpublished packages if a Gobble user is set up.
+    always include the private packages of the current user.
     """
-    results = search(value=expression, query=where, limit=limit)
+    results = elasticsearch(
+        global_query=expression,
+        keyed_query=dict(where),
+        limit=limit,
+        private=False
+    )
+    template = ('Country: {countryCode} | '
+                'Title: {title} | '
+                'Begin: {begin} | '
+                'End: {end} | '
+                'Author: {author}')
 
-    if raw:
-        echo(results[0] if len(results) == 1 else results)
+    if results:
+        for result in results:
+            package = result['package']
+
+            if 'fiscalPeriod' in package:
+                package.update(begin=package['fiscalPeriod'].get('start', 'na'))
+                package.update(end=package['fiscalPeriod'].get('end', 'na'))
+
+            info = defaultdict(lambda: 'na', **result['package'])
+            url = '/'.join([settings.OS_URL, 'viewer', result['id']])
+
+            secho(template.format(**info), **DEFAULT_STYLE)
+            secho('View: %s' % url)
+            secho('Download: %s' % result['origin_url'])
     else:
-        if results:
-            for result in results:
-                template = '[{countryCode}] "{title}" by {author}'
-                info = defaultdict(lambda: 'unknown', **result)
-                secho(template, **info)
-        else:
-            message = 'No online packages match your criteria.'
-            secho(message, fg='yellow')
+        message = 'No online packages match your criteria.'
+        secho(message, **ERROR_STYLE)
 
 
-gobble.add_command(check)
-gobble.add_command(pull)
-gobble.add_command(push)
+gobble.add_command(validate)
+gobble.add_command(upload)
 gobble.add_command(user)
 gobble.add_command(view)
 gobble.add_command(search)

@@ -33,6 +33,7 @@ PERMISSIONS_FILE = join(settings.USER_DIR, 'permission.json')
 AUTHENTICATION_FILE = join(settings.USER_DIR, 'authentication.json')
 TOKEN_ENV_VAR = 'GOBBLE_AUTH_TOKEN'
 
+
 class InvalidToken(Exception):
     pass
 
@@ -61,15 +62,12 @@ class User(object):
         self.name = self.authentication['profile']['name']
 
     @classmethod
-    def _uncache(cls, key):
+    def uncache(cls, key):
         filepath = join(settings.USER_DIR, key + '.json')
-        try:
-            with io.open(filepath) as cache:
-                json = loads(cache.read())
-                log.debug('Your %s is %s', key, json)
-                return json
-        except FileNotFoundError:
-            return
+        with io.open(filepath) as cache:
+            json = loads(cache.read())
+            log.debug('Your %s is %s', key, json)
+            return json
 
     @staticmethod
     def _uncache_token():
@@ -79,9 +77,9 @@ class User(object):
             return os.environ[TOKEN_ENV_VAR]
         with io.open(TOKEN_FILE) as cache:
             json = loads(cache.read())
-            log.debug('Your token is %s', json['token'])
+            log.debug('Your token is %s', json['jwt'])
 
-            return json['token']
+            return json['jwt']
 
     def _request_authentication(self):
         """Ask Open-Spending if the token is valid.
