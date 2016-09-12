@@ -5,14 +5,14 @@ import responses
 from pytest import raises
 from requests import Response
 
-from gobble.search import _validate, _sanitize
+from gobble.search import _check_keys, _sanitize
 from gobble.api import search_packages
 
 
 def test_validate_bad_query_raises_exception():
     with raises(ValueError):
         bad_query = dict(foo='bar', name='mickey mouse')
-        _validate(bad_query)
+        _check_keys(bad_query)
 
 
 def test_validate_query_adds_double_quotesand_prefixes():

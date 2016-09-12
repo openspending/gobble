@@ -5,7 +5,7 @@ from gobble.api import search_packages, handle
 from gobble.user import User
 
 
-SEARCH_ALIASES = {
+ALLOWED_KEYS = {
     'title': 'title',
     'author': 'author',
     'description': 'description',
@@ -15,7 +15,7 @@ SEARCH_ALIASES = {
 }
 
 
-def search(value=None, where=None, private=True, limit=None):
+def search(global_query=None, keyed_query=None, private=True, limit=None):
     """Query the packages on Open-Spending.
 
     You can search a package by `title`, `author`, `description`, `regionCode`,
@@ -27,45 +27,54 @@ def search(value=None, where=None, private=True, limit=None):
     will be returned. You can limit the size of your results with the `size`
     parameter.
 
-    :param value:
-    :param where: a `dict` of key value pairs
-    :param private: show private datapackages
-    :param limit: the number of results returned
+    :param global_query: an expression to search for across all keys
+    :param keyed_query: a `dict` of key/value search pairs
+    :param private: search private datapackages or not (default: True)
+    :param limit: the number of results returned (default: None)
 
     :return: a dictionary with the results
     :rtype: :class: `list` of `dict`
     """
 
-    assert value or where
+    assert global_query or keyed_query
 
-    query = {}
+    if keyed_query:
+        _check_keys(keyed_query)
+        raw_query = _prefix_keys(keyed_query)
+    else:
+        raw_query = {}
 
-    if value:
-        query = {'q': value}
-    if where:
-        query = _validate(where)
+    if global_query:
+        raw_query.update(q=global_query)
+
+    query = _quote_values(raw_query)
+
     if limit:
         query.update(size=limit)
 
-    quoted_query = _sanitize(query)
-
     if private:
-        user = User()
-        quoted_query.update(jwt=user.token)
+        query.update(jwt=User().token)
 
-    response = search_packages(params=quoted_query)
+    response = search_packages(params=query)
     return handle(response)
 
 
-def _sanitize(query):
-    keys = ['package.' + str(SEARCH_ALIASES[k]) for k in query.keys()]
+def _quote_values(query):
     values = ['"' + str(v) + '"' for v in query.values()]
-    return dict(zip(keys, values))
+    return dict(zip(query.keys(), values))
 
 
-def _validate(query):
-    for key in query.keys():
-        if key not in SEARCH_ALIASES:
-            msg = 'Invalid search key "{key}" for package'
+def _prefix_keys(query):
+    keys = ['package.' + str(ALLOWED_KEYS[k]) for k in query.keys()]
+    return dict(zip(keys, query.values()))
+
+
+def _check_keys(query):
+    for key in dict(query).keys():
+        if key not in ALLOWED_KEYS:
+            msg = 'Invalid search key "{key}"'
             raise ValueError(msg.format(key=key))
-    return query
+
+
+if __name__ == '__main__':
+    search(global_query='loic', private=True)

@@ -29,7 +29,7 @@ def test_compute_hash_returns_correct_hash():
 
 # noinspection PyShadowingNames
 def test_validate_bad_package_with_raise_error_false(invalid_fiscal_package):
-    report = invalid_fiscal_package.validate(raise_error=False)
+    report = invalid_fiscal_package.validate(raise_on_error=False)
     assert isinstance(report, list)
     assert report[0] == "'name' is a required property"
 
@@ -42,7 +42,7 @@ def test_validate_bad_package_raises_error_by_default(invalid_fiscal_package):
 
 # noinspection PyShadowingNames
 def test_validate_returns_true_for_valid_package(fiscal_package):
-    report = fiscal_package.validate(raise_error=False)
+    report = fiscal_package.validate(raise_on_error=False)
     assert isinstance(report, list)
 
 
