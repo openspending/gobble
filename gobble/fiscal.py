@@ -150,6 +150,12 @@ class FiscalDataPackage(DataPackage):
         :param skip_validation: use only if you have already done so
         :param publish: toggle the datapackage to "published" after upload
         """
+        self.descriptor['author'] = self.user.name
+        self.descriptor['owner'] = self.user.id
+
+        with io.open(self.filepath, 'w') as descriptor:
+            descriptor.write(self.to_json())
+
         if not skip_validation:
             self.validate()
 
