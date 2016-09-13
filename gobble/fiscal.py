@@ -5,25 +5,29 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import sys
 import io
 
 from base64 import b64encode
-from functools import reduce
 from hashlib import md5
-from os.path import getsize, join, basename, isfile, splitext
+from io import StringIO
+from os.path import getsize, join, basename, isfile
 from time import sleep
+from json import dumps
 from datapackage import DataPackage
 from datapackage.exceptions import ValidationError
 from future import standard_library
 from gobble.user import User
+from goodtables.pipeline import Pipeline
 from requests import HTTPError
 from requests_futures.sessions import FuturesSession
 
 from gobble.config import settings
 from gobble.logger import log
-from gobble.api import (handle, upload_package, request_upload,
-                        toggle_publish, upload_status)
+from gobble.api import (handle,
+                        upload_package,
+                        request_upload,
+                        toggle_publish,
+                        upload_status)
 
 standard_library.install_aliases()
 
@@ -31,6 +35,7 @@ standard_library.install_aliases()
 HASHING_BLOCK_SIZE = 65536
 OS_DATA_FORMATS = ['.csv']
 POLL_PERIOD = 5
+REPORT_FILENAME = 'goodtables.report.json'
 
 
 class ToggleError(Exception):
@@ -86,7 +91,7 @@ class FiscalDataPackage(DataPackage):
         self.path = basename(filepath)
         self.filepath = filepath
 
-    def validate(self, raise_on_error=True, schema_only=True):
+    def validate(self, raise_on_error=True, schema_only=False):
         """Validate a datapackage schema.
 
         By default, only the data-package schema is validated. To validate the
@@ -117,12 +122,14 @@ class FiscalDataPackage(DataPackage):
                     messages.append(message % args)
                     log.warn(message, *args)
 
+        if messages:
+            messages.append('Aborting data validation due to invalid schema')
+            return messages
+
         if not schema_only:
-            raise NotImplementedError('Data validation is not yet implemented')
+            return self._validate_data(raise_on_error)
 
-        return messages
-
-    def upload(self, publish=True):
+    def upload(self, publish=True, skip_validation=False):
         """Upload a fiscal datapackage to Open-Spending.
 
         It does this in 3 steps:
@@ -137,9 +144,12 @@ class FiscalDataPackage(DataPackage):
 
         For now, the only valid datafile format is CSV.
 
+        :param skip_validation: use only if you have already done so
         :param publish: toggle the datapackage to "published" after upload
         """
-        self.validate()
+        if not skip_validation:
+            self.validate()
+
         log.info('Starting uploading process for %s', self)
 
         for s3_target in self._request_s3_upload():
@@ -201,6 +211,47 @@ class FiscalDataPackage(DataPackage):
             if resource.descriptor['mediatype'] != 'text/csv':
                 message = 'Usupported format: %s, valid formats are %s'
                 raise NotImplemented(message, resource.path, OS_DATA_FORMATS)
+
+    def _validate_data(self, raise_on_error):
+        """Validate the package resources with GoodTables."""
+
+        def summarize(feedback_, path_):
+            intro = 'GoodTables has detected some errors in %s.' % path_
+            hint = 'Please check out the full report: %s.' % REPORT_FILENAME
+
+            info = feedback_['meta']
+            summary = (
+                'There are {bad_rows} (out of {total_rows}) bad rows '
+                'and {bad_cols} (out of {total_cols}) bad columns. '
+            ).format(
+                bad_rows=info['bad_row_count'],
+                total_rows=info['row_count'],
+                bad_cols=info['bad_column_count'],
+                total_cols=len(info['columns'])
+            )
+
+            log.debug(intro + summary)
+            return [intro, summary, hint]
+
+        for resource in self:
+            schema = resource.descriptor['schema']
+            path = resource.descriptor['path']
+            filepath = join(self._base_path, path)
+
+            pipeline = Pipeline(filepath, report_stream=StringIO())
+            pipeline.register_processor('schema', options={'schema': schema})
+            is_valid, report = pipeline.run()
+
+            if is_valid:
+                return []
+
+            if raise_on_error:
+                raise ValidationError('%s is invalid' % filepath)
+            else:
+                feedback = report.generate()
+                with open(REPORT_FILENAME, 'w+') as json:
+                    json.write(dumps(feedback, indent=4, ensure_ascii=False))
+                return summarize(feedback, path)
 
     @property
     def filedata(self):

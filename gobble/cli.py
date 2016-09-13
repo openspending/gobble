@@ -7,6 +7,7 @@ from json import loads, dumps
 from os.path import join, splitext, basename
 from shutil import rmtree
 
+from datapackage.exceptions import ValidationError
 from gobble.config import ROOT_DIR, settings
 from gobble.fiscal import FiscalDataPackage
 from gobble.search import search as elasticsearch, ALLOWED_KEYS
@@ -154,8 +155,7 @@ def validate(filepath, schema):
     """Validate a fiscal data-package.
 
     The FILEPATH is the relative or absolute path to a datapackage. By default,
-    the command validates both the schema and the data files. To validate only
-    the schema, pass the --schema flag.
+    the command validates both the schema and the data files.
     """
     _, extension = splitext(filepath)
     filename = basename(filepath)
@@ -190,7 +190,7 @@ def validate(filepath, schema):
 )
 @option(
     '-p', '--private',
-    help='Do not publish the data-package after upload.',
+    help='Keep the online data-package private.',
     is_flag=True
 )
 def upload(filepath, private, skip):
@@ -198,27 +198,32 @@ def upload(filepath, private, skip):
 
     The FILEPATH is the relative or absolute path to the data-package file.
     The data is always validated before upload, unless validation is skipped
-    explicitely by passing the --skip flag. This is not recommended practice.
-    Once uploaded, the data-package will be made public. If you wish to keep it
-    private, pass the --private flag.
+    explicitely. This is not recommended. Once uploaded, the data-package will
+    published, unless you pass the --private flag.
     """
 
     user_ = User()
     package = FiscalDataPackage(filepath, user=user_)
 
-    if not skip:
-        package.validate(schema_only=True)
-
     args = package, len(package), package.bytes
     message = 'Uploading %s to Open-Spending (%s files, %s bytes)...'
     secho(message % args, **DEFAULT_STYLE)
 
-    url = package.upload(publish=not private)
-    state = 'privately' if private else 'publicly'
-    args = package, state, url
-    message = 'Congratulations! %s is now %s available online: %s.'
+    try:
+        url = package.upload(publish=not private, skip_validation=skip)
 
-    secho(message % args, **SUCCESS_STYLE)
+        state = 'privately' if private else 'publicly'
+        args = package, state, url
+        message = 'Congratulations! %s is now %s available online: %s.'
+
+        secho(message % args, **SUCCESS_STYLE)
+
+    except ValidationError:
+        message = (
+            'Upload aborted due to invalid data schema or data file. \n'
+            'Use the validate command to find out more about the problem.'
+        )
+        secho(message, **ERROR_STYLE)
 
 
 # Search
