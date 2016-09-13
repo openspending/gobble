@@ -57,7 +57,6 @@ class User(object):
         self.token = self._uncache_token()
         self.authentication = self._request_authentication()
         self.permissions = self._request_permissions()
-        self.token = self.permissions['os.datastore']['token']
         self.id = self.authentication['profile']['idhash']
         self.name = self.authentication['profile']['name']
 

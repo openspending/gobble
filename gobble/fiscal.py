@@ -9,6 +9,7 @@ import sys
 import io
 
 from base64 import b64encode
+from functools import reduce
 from hashlib import md5
 from os.path import getsize, join, basename, isfile, splitext
 from time import sleep
@@ -181,8 +182,11 @@ class FiscalDataPackage(DataPackage):
         """
         publish = True if to_state == 'public' else False
         package_id = self.user.id + ':' + self.name
-        query = dict(jwt=self.user.token, id=package_id, publish=publish)
-
+        query = dict(
+            jwt=self.user.permissions['os.datastore']['token'],
+            id=package_id,
+            publish=publish
+        )
         answer = handle(toggle_publish(params=query))
 
         if not answer['success']:
@@ -225,6 +229,11 @@ class FiscalDataPackage(DataPackage):
             }
         }
 
+    @property
+    def bytes(self):
+        return sum([file['length']
+                    for file in self.filedata['filedata'].values()])
+
     def _get_header(self, path, content_type):
         filepath = join(self.base_path, path)
         return {'Content-Length': str(getsize(filepath)),
@@ -238,7 +247,10 @@ class FiscalDataPackage(DataPackage):
     def _request_s3_upload(self):
         """Request AWS S3 upload urls for all files.
         """
-        response = request_upload(params=dict(jwt=self.user.token), json=self.filedata)
+        response = request_upload(
+            params=dict(jwt=self.user.permissions['os.datastore']['token']),
+            json=self.filedata
+        )
         files = handle(response)['filedata']
 
         for path, info in files.items():
@@ -293,7 +305,10 @@ class FiscalDataPackage(DataPackage):
 
         :return: the url of the fiscal datapackage on Open-Spending
         """
-        query = dict(jwt=self.user.token, datapackage=self._descriptor_s3_url)
+        query = {
+            'jwt': self.user.permissions['os.datastore']['token'],
+            'datapackage': self._descriptor_s3_url
+        }
         response = upload_package(params=query)
         handle(response)
 
