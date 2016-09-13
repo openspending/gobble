@@ -3,7 +3,7 @@
 import io
 import sys
 from collections import defaultdict
-from json import loads
+from json import loads, dumps
 from os.path import join, splitext, basename
 from shutil import rmtree
 
@@ -26,6 +26,8 @@ from click import (Choice,
 DEFAULT_STYLE = dict(fg='white', bold=True)
 ERROR_STYLE = dict(fg='red', bold=True)
 SUCCESS_STYLE = dict(fg='green', bold=True)
+ITEM_STYLE = dict(fg='yellow')
+
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help'])
 
 
@@ -207,6 +209,10 @@ def upload(filepath, private, skip):
     if not skip:
         package.validate(schema_only=True)
 
+    args = package, len(package), package.bytes
+    message = 'Uploading %s to Open-Spending (%s files, %s bytes)...'
+    secho(message % args, **DEFAULT_STYLE)
+
     url = package.upload(publish=not private)
     state = 'privately' if private else 'publicly'
     args = package, state, url
@@ -237,7 +243,17 @@ def upload(filepath, private, skip):
     default=False,
     type=int
 )
-def search(expression, where, limit):
+@option(
+    '-p', '--private',
+    help='Include private packages belonging to the user.',
+    is_flag=True
+)
+@option(
+    '-r', '--raw',
+    help='Return the results as JSON.',
+    is_flag=True
+)
+def search(expression, where, limit, private, raw):
     """Search fiscal packages on Open-Spending.
 
     You can search for an EXPRESSION across all keys or restrict yourself to
@@ -252,39 +268,51 @@ def search(expression, where, limit):
         - country
         - city
 
-    The command returns a one line summary of each matching fiscal package. To
+    The command returns a short summary of each matching fiscal package. To
     return the complete search results as JSON, pass the --raw flag. Results
-    always include the private packages of the current user.
+    do not include the private packages of the current user by default.
     """
     results = elasticsearch(
         global_query=expression,
         keyed_query=dict(where),
         limit=limit,
-        private=False
+        private=private
     )
-    template = ('Country: {countryCode} | '
-                'Title: {title} | '
-                'Begin: {begin} | '
-                'End: {end} | '
-                'Author: {author}')
+    template = ('Country: {countryCode} \n'
+                'Begin: {begin} \n'
+                'End: {end} \n'
+                'Author: {author} \n'
+                'ID: {id}')
 
-    if results:
-        for result in results:
-            package = result['package']
+    if not raw:
+        if results:
+            for result in results:
+                package = result['package']
+                package.update(id=result['id'])
 
-            if 'fiscalPeriod' in package:
-                package.update(begin=package['fiscalPeriod'].get('start', 'na'))
-                package.update(end=package['fiscalPeriod'].get('end', 'na'))
+                if 'fiscalPeriod' in package:
+                    begin = package['fiscalPeriod'].get('start', 'unknown')
+                    end = package['fiscalPeriod'].get('end', 'unknown')
+                    package.update(begin=begin)
+                    package.update(end=end)
 
-            info = defaultdict(lambda: 'na', **result['package'])
-            url = '/'.join([settings.OS_URL, 'viewer', result['id']])
+                info = defaultdict(lambda: 'unknown', **result['package'])
+                url = '/'.join([settings.OS_URL, 'viewer', result['id']])
 
-            secho(template.format(**info), **DEFAULT_STYLE)
-            secho('View: %s' % url)
-            secho('Download: %s' % result['origin_url'])
+                secho('Title: %s' % package['title'], **ITEM_STYLE)
+                secho(template.format(**info), **DEFAULT_STYLE)
+                secho('View: %s' % url)
+                secho('Download: %s \n' % result['origin_url'])
+
+            summary = '%s packages matched your criteria.'
+            secho(summary % len(results), **SUCCESS_STYLE)
+
+        else:
+            message = 'No online packages matched your criteria.'
+            secho(message, **ERROR_STYLE)
+
     else:
-        message = 'No online packages match your criteria.'
-        secho(message, **ERROR_STYLE)
+        secho(dumps(results, ensure_ascii=False, indent=4))
 
 
 gobble.add_command(validate)
