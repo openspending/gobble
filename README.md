@@ -20,7 +20,7 @@ Technically speaking, a fiscal datapackage consists of a `JSON` descriptor point
                budget_2015.csv
 ```
 
-Once your fiscal data package is ready, you can start using Gooble.
+Once your fiscal data package is ready, you can start using Gobble.
 
 ## Command line interface
 
