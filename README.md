@@ -33,20 +33,21 @@ Asciinema to come...
 In Gobble, fiscal data is represented by the `FiscalDataPackage` class. It's a sub-class of the `DataPackage` class, defined in the [datapackage-py](https://github.com/frictionlessdata/datapackage-py) library. To create a `FiscalDataPackage` object, pass the path of your descriptor to the constructor:
 
 ```
-budget = FiscalDataPackage('path/to/my/package/descriptor.json')
+user = User()
+budget = FiscalDataPackage('path/to/my/package/descriptor.json', user=user)
 ```
 
-Note that as of today, Open-Spending only supports data files in `CSV` format, so `FiscalDataPackage` will raise a `NotImplemented` error if you try and pass it other formats.
+Note that as of today, Open-Spending only supports data files in `CSV` format, so `FiscalDataPackage` will raise a `NotImplementedError` error if you try and pass it other formats.
 
 ### Validation
 
-To validate the fiscal datapackage descriptor schema:
+To validate the fiscal datapackage schema and data:
 
 ```
 bugdet.validate()
 ```
 
-If the descriptor schema is invalid, a `ValidationError` will be raised. To get a `list` of errors instead, set the `raise_error` flag to `False`.
+If the datapackage is invalid, a `ValidationError` will be raised. To get a `list` of errors instead (more helpful), set the `raise_on_error` flag to `False`.
 ```
 budget.validate(raise_error=False)
 ```
@@ -56,32 +57,25 @@ budget.validate(raise_error=False)
 To upload a fiscal data package to Open-Spending: 
 
 ```
-url = budget.upload()  # the url of your new package on Open-Spending
+url = budget.upload()  # the url of your package in the Open-Spending Viewer
 ```
 
-By default, uploaded packages are private. You can toggle the publication state like so:
+By default, uploaded packages are published straight away. You can toggle the publication state like so:
 
 ```
-new_state = budget.toggle('public') # returns 'public'
+new_state = budget.toggle('private') # returns 'private'
 ```
 
 ###  Search
 
-You can search (and download) the descriptor file of existing fiscal data packages from the Open-Spending platform like so:
+You can search existing fiscal data packages from the Open-Spending platform like so:
 
 ```
-query = {'countryCode': 'MX'}
-results = search(query)
+results = search('mexico')
+results = search('MX', {'author': 'mickey_mouse'})
 ```
 
-where `results` is list of `JSON` package descriptors (as `dict`). Valid search keys are: `size`, `title`, `author`, `description`, `regionCode`, `countryCode`, `cityCode`. Or you can use the magic  `q` key to search all fields at once.
-
-You can limit search results and include you private packages in the results like so:
-
-```
-query = {'author': 'mickey_mouse'}
-results = search(query, limit=5, private=True)
-```
+where `results` is list of datapackages as `dict`. Available search keys are: `size`, `title`, `author`, `description`, `region`, `country`, `city`. 
 
 ## Resources
 
