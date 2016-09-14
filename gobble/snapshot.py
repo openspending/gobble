@@ -49,7 +49,7 @@ class SnapShot(OrderedDict):
         self.params = params
         self.request_payload = json
 
-        super(OrderedDict, self).__init__(self._template)
+        super(SnapShot, self).__init__(self._template)
         self.timestamp = str(datetime.now())
 
         self._log()

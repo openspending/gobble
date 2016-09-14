@@ -9,7 +9,6 @@ import responses
 from future import standard_library
 from requests import Response
 
-from gobble.user import
 from gobble.api import authenticate_user
 
 standard_library.install_aliases()

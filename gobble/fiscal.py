@@ -6,6 +6,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import io
+import sys
 
 from base64 import b64encode
 from hashlib import md5
@@ -128,6 +129,8 @@ class FiscalDataPackage(DataPackage):
 
         if not schema_only:
             return self._validate_data(raise_on_error)
+        else:
+            return messages
 
     def upload(self, publish=True, skip_validation=False):
         """Upload a fiscal datapackage to Open-Spending.
@@ -308,7 +311,10 @@ class FiscalDataPackage(DataPackage):
             message = '%s is ready for upload to %s'
             log.info(message, path, info['upload_url'])
             query = {k: v[0] for k, v in info['upload_query'].items()}
-            yield info['upload_url'], path, query, self._get_header(path, info['type'])
+            yield (info['upload_url'],
+                   path,
+                   query,
+                   self._get_header(path, info['type']))
 
     def _push_to_s3(self, url, path, query, headers):
         """Send data files for upload to the S3 bucket.

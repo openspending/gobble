@@ -70,5 +70,3 @@ log.debug('Gobble is running in %s mode', GOBBLE_MODE)
 for key, value in vars(settings).items():
     if key.isupper():
         log.debug('%s = %s', key, value)
-
-
