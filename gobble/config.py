@@ -43,8 +43,7 @@ class Development(Production):
     S3_BUCKET_URL = 'http://fakes3/fake-bucket'
     OS_URL = 'http://dev.openspending.org'
     USER_DIR = join(HOME_DIR, '.gobble.dev')
-    FILE_LOG_LEVEL = None
-    LOG_FILE = None
+    FILE_LOG_LEVEL = DEBUG
     EXPANDED_LOG_STYLE = True
     CONSOLE_LOG_LEVEL = None
     CONSOLE_LOG_FORMAT = ('[%(name)s] '

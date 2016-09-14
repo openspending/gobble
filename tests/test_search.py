@@ -5,7 +5,7 @@ import responses
 from pytest import raises
 from requests import Response
 
-from gobble.search import _check_keys, _sanitize
+from gobble.search import _check_keys, _quote_values, _prefix_keys
 from gobble.api import search_packages
 
 
@@ -15,16 +15,22 @@ def test_validate_bad_query_raises_exception():
         _check_keys(bad_query)
 
 
-def test_validate_query_adds_double_quotesand_prefixes():
+def test_quote_values_adds_double_quotes():
     original = {'author': 'mickey', 'title': 'fantasia'}
-    validated = {'package.author': '"mickey"', 'package.title': '"fantasia"'}
-    assert _sanitize(original) == validated
+    validated = {'author': '"mickey"', 'title': '"fantasia"'}
+    assert _quote_values(original) == validated
+
+
+def test_prefix_keys_adds_prefixes():
+    original = {'author': 'mickey', 'title': 'fantasia'}
+    validated = {'package.author': 'mickey', 'package.title': 'fantasia'}
+    assert _prefix_keys(original) == validated
 
 
 def test_numbers_get_quoted_too():
     original = {'int': 1, 'float': 99.99}
-    validated = {'package.int': '"1"', 'package.float': '"99.99"'}
-    assert _sanitize(original) == validated
+    validated = {'int': '"1"', 'float': '"99.99"'}
+    assert _quote_values(original) == validated
 
 
 @responses.activate

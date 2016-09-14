@@ -19,7 +19,13 @@ from tests.parameters import configurations
 
 @mark.parametrize('settings', configurations)
 def test_log_levels_are_set(settings):
-    assert isinstance(settings.CONSOLE_LOG_LEVEL, (int, None))
+    assert settings.CONSOLE_LOG_LEVEL is None or \
+           isinstance(settings.CONSOLE_LOG_LEVEL, int)
+
+
+@mark.parametrize('settings', configurations)
+def test_log_levels_are_set(settings):
+    assert isinstance(settings.LOG_FILE, str)
 
 
 def test_global_constants_are_correct():
@@ -56,4 +62,3 @@ def test_localhost_is_a_netloc_tuple(settings):
 @mark.parametrize('settings', configurations)
 def test_expanded_log_style_setting_is_set(settings):
     assert isinstance(settings.EXPANDED_LOG_STYLE, bool)
-
