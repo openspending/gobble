@@ -75,7 +75,7 @@ results = search('mexico')
 results = search('MX', {'author': 'mickey_mouse'})
 ```
 
-where `results` is list of datapackages as `dict`. Available search keys are: `size`, `title`, `author`, `description`, `region`, `country`, `city`. 
+where `results` is a `list` of datapackages (`dict`). Available search keys are: `size`, `title`, `author`, `description`, `region`, `country`, `city`. 
 
 ## Resources
 
