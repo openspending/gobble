@@ -43,6 +43,10 @@ class ToggleError(Exception):
     pass
 
 
+class UploadError(Exception):
+    pass
+
+
 def compute_hash(filepath):
     """Return the md5 hash of a file"""
     hasher = md5()
@@ -92,7 +96,7 @@ class FiscalDataPackage(DataPackage):
         self.path = basename(filepath)
         self.filepath = filepath
 
-    def validate(self, raise_on_error=True, schema_only=False):
+    def validate(self, raise_on_error=True, schema_only=True):
         """Validate a datapackage schema.
 
         By default, only the data-package schema is validated. To validate the
@@ -187,7 +191,10 @@ class FiscalDataPackage(DataPackage):
         answer = upload_status(params=query).json()
         args = self, answer['status'], answer['progress'], len(self)
         log.debug('%s is loading (%s) %s/%s', *args)
-        return answer['status'] != 'done'
+        if answer['status'] == 'fail':
+            raise UploadError(answer.get('error'))
+        
+        return answer['status'] not in {'done', 'fail'}
 
     def toggle(self, to_state):
         """Toggle public access to a fiscal datapackage
