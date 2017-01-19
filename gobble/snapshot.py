@@ -15,7 +15,10 @@ import io
 try:
     from json import JSONDecodeError
 except ImportError:
-    JSONDecodeError = ValueError
+    try:
+        from simplejson.scanner import JSONDecodeError
+    except ImportError:
+        JSONDecodeError = ValueError
 
 from gobble.config import ROOT_DIR
 from gobble.logger import log

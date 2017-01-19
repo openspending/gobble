@@ -12,6 +12,13 @@ from urllib.parse import (urlencode,
                           urljoin,
                           urlunsplit,
                           urlsplit)
+try:
+    from json import JSONDecodeError
+except ImportError:
+    try:
+        from simplejson.scanner import JSONDecodeError
+    except ImportError:
+        JSONDecodeError = ValueError
 
 from gobble.config import settings
 from gobble.logger import log
@@ -111,4 +118,7 @@ def handle(response):
         log.error(error)
         raise error
 
-    return to_json(response)
+    try:
+      return to_json(response)
+    except JSONDecodeError:
+        return {}
