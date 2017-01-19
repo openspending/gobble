@@ -1,7 +1,7 @@
 {
   "name": "os-gobble",
   "description": "Command line tools for Open-Spending.",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "slug": "os-gobble",
   "author": "Open Knowledge Foundation",
   "author_email": "info@okfn.org",

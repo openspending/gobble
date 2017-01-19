@@ -171,6 +171,7 @@ class FiscalDataPackage(DataPackage):
         self._handle_promises()
         self._insert_into_datastore()
 
+        sleep(POLL_PERIOD)
         while self.in_progress:
             sleep(POLL_PERIOD)
 
