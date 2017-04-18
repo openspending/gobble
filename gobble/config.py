@@ -22,7 +22,7 @@ GOBBLE_MODE = getenv('GOBBLE_MODE', 'Production')
 
 
 class Production(object):
-    OS_URL = 'http://next.openspending.org'
+    OS_URL = 'https://next.openspending.org'
     S3_BUCKET_URL = 'https://s3.amazonaws.com/datastore.openspending.org'
     LOCALHOST = ('127.0.0.1', 8001)
     USER_DIR = join(HOME_DIR, '.gobble')
