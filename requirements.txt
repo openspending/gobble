@@ -2,4 +2,4 @@ click
 requests
 requests-futures
 datapackage
-goodtables
+goodtables<1.0.0
