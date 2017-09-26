@@ -274,8 +274,8 @@ class FiscalDataPackage(DataPackage):
         filedata = {
             resource.descriptor['path']: {
                 'name': resource.descriptor['name'],
-                'length': getsize(resource.local_data_path),
-                'md5': compute_hash(resource.local_data_path),
+                'length': getsize(resource.source),
+                'md5': compute_hash(resource.source),
                 'type': resource.descriptor['mediatype'],
             } for resource in self
         }
