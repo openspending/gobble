@@ -82,8 +82,7 @@ class FiscalDataPackage(DataPackage):
         if not isfile(filepath):
             raise NotImplemented('%s is not a local path', filepath)
 
-        super(FiscalDataPackage, self).__init__(filepath,
-                                                schema='fiscal', **kw)
+        super(FiscalDataPackage, self).__init__(filepath, **kw)
         self._check_file_formats()
 
         self._streams = []
