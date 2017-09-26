@@ -12,13 +12,7 @@ from click import command
 
 import io
 
-try:
-    from json import JSONDecodeError
-except ImportError:
-    try:
-        from simplejson.scanner import JSONDecodeError
-    except ImportError:
-        JSONDecodeError = ValueError
+from json import JSONDecodeError
 
 from gobble.config import ROOT_DIR
 from gobble.logger import log

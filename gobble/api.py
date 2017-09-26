@@ -12,13 +12,7 @@ from urllib.parse import (urlencode,
                           urljoin,
                           urlunsplit,
                           urlsplit)
-try:
-    from json import JSONDecodeError
-except ImportError:
-    try:
-        from simplejson.scanner import JSONDecodeError
-    except ImportError:
-        JSONDecodeError = ValueError
+from json import JSONDecodeError
 
 from gobble.config import settings
 from gobble.logger import log
