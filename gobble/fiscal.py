@@ -13,7 +13,7 @@ from hashlib import md5
 from io import StringIO
 from os.path import getsize, join, basename, isfile
 from time import sleep
-from json import dumps
+from json import dumps, JSONDecodeError
 from datapackage import DataPackage
 from datapackage.exceptions import ValidationError
 from future import standard_library
@@ -188,7 +188,10 @@ class FiscalDataPackage(DataPackage):
         """Return true when the upload finished."""
 
         query = dict(datapackage=self._descriptor_s3_url)
-        answer = upload_status(params=query).json()
+        try:
+           answer = json.loads(upload_status(params=query).text)
+        except JSONDecodeError:
+           return True
         args = self, answer['status'], answer['progress'], len(self)
         log.debug('%s is loading (%s) %s/%s', *args)
         if answer['status'] == 'fail':
