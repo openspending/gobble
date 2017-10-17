@@ -25,7 +25,7 @@ SNAPSHOTS_DIR = join(ROOT_DIR, 'assets', 'snapshots')
 def to_json(response):
     """Safely extract the payload from the response object"""
     try:
-        return json.loads(response.text)
+        return loads(response.text)
     except JSONDecodeError:
         return {}
 

@@ -13,7 +13,7 @@ from hashlib import md5
 from io import StringIO
 from os.path import getsize, join, basename, isfile
 from time import sleep
-from json import dumps, JSONDecodeError
+from json import dumps, loads, JSONDecodeError
 from datapackage import DataPackage
 from datapackage.exceptions import ValidationError
 from future import standard_library
@@ -189,7 +189,7 @@ class FiscalDataPackage(DataPackage):
 
         query = dict(datapackage=self._descriptor_s3_url)
         try:
-           answer = json.loads(upload_status(params=query).text)
+           answer = loads(upload_status(params=query).text)
         except JSONDecodeError:
            return True
         args = self, answer['status'], answer['progress'], len(self)
