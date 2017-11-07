@@ -226,10 +226,7 @@ class FiscalDataPackage(DataPackage):
         return to_state
 
     def _check_file_formats(self):
-        for resource in self:
-            if resource.descriptor['mediatype'] != 'text/csv':
-                message = 'Usupported format: %s, valid formats are %s'
-                raise NotImplemented(message, resource.path, OS_DATA_FORMATS)
+        pass
 
     def _validate_data(self, raise_on_error):
         """Validate the package resources with GoodTables."""
