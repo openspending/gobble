@@ -276,7 +276,7 @@ class FiscalDataPackage(DataPackage):
                 'name': resource.descriptor['name'],
                 'length': getsize(resource.source),
                 'md5': compute_hash(resource.source),
-                'type': resource.descriptor['mediatype'],
+                'type': resource.descriptor.get('mediatype', 'text/'+resource.descriptor['path'].split('.')[-1]),
             } for resource in self
         }
         descriptor_file = {
