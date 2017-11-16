@@ -1,11 +1,4 @@
 """A simple logger that logs to file and console"""
-
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
-from future import standard_library
 from logging import (getLogger,
                      FileHandler,
                      StreamHandler,
@@ -14,8 +7,6 @@ from logging import (getLogger,
                      Filter)
 
 from gobble.config import settings, GOBBLE_MODE
-
-standard_library.install_aliases()
 
 
 class MultilineFilter(Filter):

@@ -1,6 +1,4 @@
 """This module has good intentions, like helping you debug API calls"""
-
-
 from collections import OrderedDict
 from copy import deepcopy
 from datetime import datetime

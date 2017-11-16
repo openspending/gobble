@@ -1,17 +1,8 @@
 """Test the configuration module"""
-
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
 from urllib.parse import urlparse
 
-from future import standard_library
 from os.path import isdir, dirname
 from pytest import mark
-
-standard_library.install_aliases()
 
 from gobble.config import ROOT_DIR, HOME_DIR, GOBBLE_MODE
 from tests.parameters import configurations
@@ -24,7 +15,7 @@ def test_log_levels_are_set(settings):
 
 
 @mark.parametrize('settings', configurations)
-def test_log_levels_are_set(settings):
+def test_log_file_is_str(settings):
     assert isinstance(settings.LOG_FILE, str)
 
 

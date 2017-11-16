@@ -1,10 +1,4 @@
 """ This modules uploads data-packages to the Open-Spending datastore"""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import io
 import sys
 
@@ -16,7 +10,6 @@ from time import sleep
 from json import dumps, loads, JSONDecodeError
 from datapackage import DataPackage, Profile
 from datapackage.exceptions import ValidationError
-from future import standard_library
 from gobble.user import User
 from goodtables.pipeline import Pipeline
 from requests import HTTPError
@@ -29,8 +22,6 @@ from gobble.api import (handle,
                         request_upload,
                         toggle_publish,
                         upload_status)
-
-standard_library.install_aliases()
 
 
 HASHING_BLOCK_SIZE = 65536

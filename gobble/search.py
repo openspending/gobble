@@ -1,6 +1,4 @@
 """Search for users and package inside the ElasticSearch database"""
-
-
 from gobble.api import search_packages, handle
 from gobble.user import User
 

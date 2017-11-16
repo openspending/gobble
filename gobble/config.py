@@ -1,10 +1,4 @@
 """This module exposes user configurable settings"""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 from logging import DEBUG
 from os import getenv
 from os import mkdir
@@ -12,9 +6,6 @@ from os.path import isdir
 from os.path import join, abspath, dirname, expanduser
 from sys import modules
 
-from future import standard_library
-
-standard_library.install_aliases()
 
 HOME_DIR = abspath(join(expanduser('~')))
 ROOT_DIR = abspath(join(dirname(__file__), '..'))

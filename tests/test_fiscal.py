@@ -1,13 +1,5 @@
 """Tests for the uploader module"""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-
 import datapackage
-from future import standard_library
 from os.path import join
 from pytest import raises
 
@@ -15,9 +7,6 @@ from pytest import raises
 from tests.fixtures import fiscal_package, invalid_fiscal_package
 from gobble.config import ROOT_DIR
 from gobble.fiscal import compute_hash
-
-
-standard_library.install_aliases()
 
 
 DATA_FILE = join(ROOT_DIR, 'assets', 'datapackage', 'data', 'data.csv')
