@@ -189,14 +189,14 @@ class FiscalDataPackage(DataPackage):
 
         query = dict(datapackage=self._descriptor_s3_url)
         try:
-           answer = loads(upload_status(params=query).text)
+            answer = loads(upload_status(params=query).text)
         except JSONDecodeError:
-           return True
+            return True
         args = self, answer['status'], answer['progress'], len(self)
         log.debug('%s is loading (%s) %s/%s', *args)
         if answer['status'] == 'fail':
             raise UploadError(answer.get('error'))
-        
+
         return answer['status'] not in {'done', 'fail'}
 
     def toggle(self, to_state):

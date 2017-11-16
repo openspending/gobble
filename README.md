@@ -2,7 +2,7 @@
 
 # Gobble
 
-Gobble is the client API for [Open-Spending](next.openspending.org), an international platform to package, share and visualize budget data. Gobble does exactly the same thing as the [packager interface](next.openspending.org/packager), except programatically. It can be used both as python client or a command line interface. It's compatible with versions 3.3, 3.4, 3.5. Support for 2.7 is in the works. You can install it via `pip`.
+Gobble is the client API for [Open-Spending](next.openspending.org), an international platform to package, share and visualize budget data. Gobble does exactly the same thing as the [packager interface](next.openspending.org/packager), except programatically. It can be used both as python client or a command line interface. It's compatible with python version 3.6. You can install it via `pip`.
 
 ```
 pip install os-gobble
