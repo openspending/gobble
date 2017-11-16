@@ -14,7 +14,7 @@ from io import StringIO
 from os.path import getsize, join, basename, isfile
 from time import sleep
 from json import dumps, loads, JSONDecodeError
-from datapackage import DataPackage
+from datapackage import DataPackage, Profile
 from datapackage.exceptions import ValidationError
 from future import standard_library
 from gobble.user import User
@@ -110,19 +110,19 @@ class FiscalDataPackage(DataPackage):
         :return A list of error messages or an empty list.
         """
         messages = []
+        profile = Profile('fiscal-data-package')
 
         if raise_on_error:
-            super(FiscalDataPackage, self).validate()
+            profile.validate(self.descriptor)
         else:
             try:
-                super(FiscalDataPackage, self).validate()
+                profile.validate(self.descriptor)
                 message = '%s (%s) is a valid fiscal data-package schema'
                 log.info(message, self.path, self)
-
-            except ValidationError:
-                for error in self.iter_errors():
+            except ValidationError as e:
+                for error in e.errors:
                     message = 'SCHEMA ERROR in %s: %s'
-                    args = self.path, error.message
+                    args = self.path, error
                     messages.append(message % args)
                     log.warn(message, *args)
 
