@@ -1,4 +1,5 @@
 [![Build Status](https://travis-ci.org/openspending/gobble.svg?branch=master)](https://travis-ci.org/openspending/gobble)
+[![Coveralls](http://img.shields.io/coveralls/openspending/gobble/master.svg)](https://coveralls.io/r/openspending/gobble?branch=master)
 
 # Gobble
 
