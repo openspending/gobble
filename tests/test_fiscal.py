@@ -1,13 +1,5 @@
 """Tests for the uploader module"""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
-
-from datapackage.exceptions import ValidationError
-from future import standard_library
+import datapackage
 from os.path import join
 from pytest import raises
 
@@ -15,9 +7,6 @@ from pytest import raises
 from tests.fixtures import fiscal_package, invalid_fiscal_package
 from gobble.config import ROOT_DIR
 from gobble.fiscal import compute_hash
-
-
-standard_library.install_aliases()
 
 
 DATA_FILE = join(ROOT_DIR, 'assets', 'datapackage', 'data', 'data.csv')
@@ -28,24 +17,24 @@ def test_compute_hash_returns_correct_hash():
 
 
 # noinspection PyShadowingNames
-def test_validate_bad_package_with_raise_error_false(invalid_fiscal_package):
-    report = invalid_fiscal_package.validate(
+def test_validate_bad_package_with_raise_error_false():
+    report = invalid_fiscal_package().validate(
         raise_on_error=False,
         schema_only=True
     )
     assert isinstance(report, list)
-    assert 'is a required property' in report[0]
+    assert len(report) > 0
 
 
 # noinspection PyShadowingNames
-def test_validate_bad_package_raises_error_by_default(invalid_fiscal_package):
-    with raises(ValidationError):
-        invalid_fiscal_package.validate()
+def test_validate_bad_package_raises_error_by_default():
+    with raises(datapackage.exceptions.ValidationError):
+        invalid_fiscal_package().validate()
 
 
 # noinspection PyShadowingNames
-def test_validate_returns_true_for_valid_package(fiscal_package):
-    report = fiscal_package.validate(
+def test_validate_returns_true_for_valid_package():
+    report = fiscal_package().validate(
         raise_on_error=False,
         schema_only=True
     )

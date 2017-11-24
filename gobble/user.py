@@ -1,16 +1,9 @@
 """Manage user authentication and authorization"""
-
-from __future__ import unicode_literals
-from __future__ import print_function
-from __future__ import division
-from __future__ import absolute_import
-
 import io
 import os
 
 from builtins import dict
-from future import standard_library
-from future.backports.http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from os.path import join
 from json import loads
 from os import mkdir
@@ -23,8 +16,6 @@ from gobble.api import (handle,
                         authenticate_user,
                         authorize_user,
                         oauth_callback)
-
-standard_library.install_aliases()
 
 
 OS_SERVICES = ['os.datastore']

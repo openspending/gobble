@@ -1,19 +1,11 @@
 """Test the API module."""
 
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import responses
-from future import standard_library
 from pytest import mark, raises
 from requests import HTTPError
 
 from gobble.api import handle
 from tests.parameters import api_calls
-
-standard_library.install_aliases()
 
 
 @responses.activate

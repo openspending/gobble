@@ -1,10 +1,4 @@
 """Fixtures for test modules"""
-
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import io
 from json import loads
 from os import makedirs
@@ -12,15 +6,12 @@ from os.path import join, expanduser
 from shutil import rmtree
 from unittest.mock import patch
 
-from future import standard_library
 from gobble.snapshot import SNAPSHOTS_DIR
 from pytest import fixture
 
 from gobble import FiscalDataPackage
 from gobble.config import settings, GOBBLE_MODE
 from gobble.config import ROOT_DIR
-
-standard_library.install_aliases()
 
 
 # Devlopment mode required
