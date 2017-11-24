@@ -22,4 +22,4 @@ script:
   - py.test --verbose --cov=gobble tests
 
 after_success:
-  - python coveralls
+  - coveralls
