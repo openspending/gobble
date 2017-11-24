@@ -24,7 +24,6 @@ def test_validate_bad_package_with_raise_error_false():
     )
     assert isinstance(report, list)
     assert len(report) > 0
-    # assert 'is a required property' in report[0]
 
 
 # noinspection PyShadowingNames
